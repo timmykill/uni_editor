@@ -6,14 +6,9 @@
 #include <sys/ioctl.h>
 #include <termios.h>
 
-//#define DEBUG
-#define LINE_LENGHT 50
+#include "term_driver.h"
 
-void clear_screen()
-{
-	const char *CLEAR_SCREEN_ANSI = "\x1B[1;1H\x1B[2J";
-	write(STDOUT_FILENO, CLEAR_SCREEN_ANSI, 12);
-}
+#define LINE_LENGHT 50
 
 struct buffer {
 	struct line* first;
@@ -101,21 +96,11 @@ int main(int argc, char *argv[])
 	struct buffer buf;
 	bool ref; //refresh screen
 
-	#ifndef DEBUG
-	/* Set terminal to get char */
-	static struct termios oldt, newt;
-	tcgetattr( STDIN_FILENO, &oldt);
-	newt = oldt;
-	newt.c_lflag &= ~(ICANON);          
-	tcsetattr( STDIN_FILENO, TCSANOW, &newt);
-	#endif
-
 	/* If no file specified, exit */
 	if (argc != 2){
 		fprintf(stderr, "Wrong number of args, specify a file\r\n");
 		exit(1);
 	}
-
 
 	/* Load file */
 	FILE * fp = fopen(argv[1], "r");
@@ -126,6 +111,8 @@ int main(int argc, char *argv[])
 	/* Clear screen, set it raw, and get terminal size */
 	clear_screen();
 	ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+	prep_term();
+	atexit(restore_term);
 
 	/* Load buffer */
 	buf = load_buffer(fp);
@@ -148,8 +135,4 @@ int main(int argc, char *argv[])
 			print_buf(buf, w.ws_row);
 	} while (tmp != 'q');
 	
-	#ifndef DEBUG
-	/* reset term params */
-	tcsetattr( STDIN_FILENO, TCSANOW, &oldt);
-	#endif
 }
