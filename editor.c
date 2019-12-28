@@ -10,10 +10,22 @@
 
 #define LINE_LENGHT 50
 
-struct buffer {
+struct cursor {
+	int block;
+	int line;
+	int line_block;
+	int pos; //position inside the line block
+};
+
+struct text_box_start {
+	int block;
+	int line;
+};
+
+struct block {
 	struct line* first;
-	int curr; //Current line
 	int lenght; //Number of lines
+	struct block *next;
 };
 
 struct line {
@@ -22,22 +34,30 @@ struct line {
 	struct line* next;
 };
 
-struct buffer load_buffer(FILE* fp){
-	struct buffer buf;
+void print_cursor(struct cursor curs, struct text_box_start ts){
+	int x, y;
+	// block stuff
+	y = curs.line - ts.line;
+	x = curs.line_block * LINE_LENGHT + curs.pos;
+	printf("\033[%d;%dH", y, x);
+}
+
+struct block * load_block(FILE* fp){
+	struct block *bl;
 	struct line* curr_line;
 	struct line* cont_parent_line;
 	int tmp, i = 0;
 	bool cont = false;
-	buf.first = malloc(sizeof(struct line));
-	buf.curr = 0;
-	buf.lenght = 0;
-	curr_line = buf.first;
+	bl = malloc(sizeof(struct block));
+	bl->first = malloc(sizeof(struct line));
+	bl->lenght = 0;
+	curr_line = bl->first;
 	curr_line->cont = NULL;
 	curr_line->next = NULL;
 	do {
 		tmp = fgetc(fp);
 		if (tmp == '\n') {
-			buf.lenght++;
+			bl->lenght++;
 			curr_line->val[i] = '\0';
 			if (cont){
 				curr_line = cont_parent_line;
@@ -64,15 +84,20 @@ struct buffer load_buffer(FILE* fp){
 			curr_line->val[i++] = (char) tmp;	
 		}
 	} while(tmp != EOF);
-	return buf;
+	return bl;
 }
 
-void print_buf(struct buffer buf, int line_num){
+void print_bl(struct block *bl, int line_num, struct text_box_start ts){
 	int i;
-	struct line* curr_line, * cont_line;
-	curr_line = buf.first;
+	struct line *curr_line, *cont_line;
+	struct block *curr_block;
+	curr_line = bl->first;
+	/* get to right block */
+	for (i = 0; i < ts.block && bl->next != NULL; i++){
+		curr_block = curr_block->next;
+	}
 	/* get to right line */
-	for (i = 0; i < buf.curr && curr_line->next != NULL; i++){
+	for (i = 0; i < ts.line && curr_line->next != NULL; i++){
 		curr_line = curr_line->next;
 	}
 	for (i = 0; i < line_num && curr_line->next != NULL; i++){
@@ -93,7 +118,9 @@ int main(int argc, char *argv[])
 {
 	struct winsize w;
 	int tmp;
-	struct buffer buf;
+	struct block *bl;
+	struct text_box_start ts;
+	struct cursor curs;
 	bool ref; //refresh screen
 
 	/* If no file specified, exit */
@@ -114,25 +141,53 @@ int main(int argc, char *argv[])
 	prep_term();
 	atexit(restore_term);
 
-	/* Load buffer */
-	buf = load_buffer(fp);
+	/* Initialize text box and cursor*/
+	ts.block = 0;
+	ts.line = 0;
+	curs.block = 0;
+	curs.line = 0;
+	curs.line_block = 0;
+	curs.pos = 0;
 
-	/* Print content of buffer */
-	print_buf(buf, w.ws_row);
+	
+	/* Load block */
+	bl = load_block(fp);
 
-	/* Get user input */
+	/* Print content of block */
+	print_bl(bl, w.ws_row, ts);
+
+	/* 
+		Get user input
+		TODO add block support
+	*/
 	do {
 		tmp = getchar();
-		ref = false;
-		if (tmp == 'k' && buf.curr > 0){
-			(buf.curr)--;
-			ref = true;
-		} else if (tmp == 'j' && buf.curr < buf.lenght - w.ws_row){
-			(buf.curr)++;
-			ref = true;
+		if (tmp == 'k' && curs.line > 0){
+			(curs.line)--;
+		} else if (tmp == 'j' && curs.line < bl->lenght - w.ws_row){
+			(curs.line)++;
+		} else if (tmp == 'l'){
+			if (curs.pos >= LINE_LENGHT - 1){
+				(curs.line_block)++;
+				curs.pos = 0;
+			} else {
+				(curs.pos)++;
+			}
+		} else if (tmp == 'h'){
+			if (curs.pos <= 0){
+				(curs.line_block)--;
+				curs.pos = LINE_LENGHT -1;
+			} else {
+				(curs.pos)--;
+			}
 		}
-		if (ref)
-			print_buf(buf, w.ws_row);
+		if (curs.line - ts.line > w.ws_row){
+			(ts.line)++;
+		} else if (curs.line - ts.line < 0){
+			(ts.line)--;
+		}
+		clear_screen();
+		print_bl(bl, w.ws_row, ts);
+		print_cursor(curs, ts);			
 	} while (tmp != 'q');
-	
 }

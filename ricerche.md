@@ -83,3 +83,12 @@ Carriage-return "goes left" and line-feed "goes down".
 
 When you set the terminal to raw mode, newline will no longer be converted to carriage-return plus line-feed. Lacking the carriage-returns, you get that staircase effect.
 
+## How to position the input text cursor in C?
+
+``` c
+#define gotoxy(x,y) printf("\033[%d;%dH", (y), (x))
+`` How to position the input text cursor in C?
+
+``` c
+#define gotoxy(x,y) printf("\033[%d;%dH", (y), (x))
+```
