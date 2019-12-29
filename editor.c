@@ -7,39 +7,23 @@
 #include <termios.h>
 
 #include "term_driver.h"
+#include "elements.h"
+#include "cursor.h"
 
-#define LINE_LENGHT 50
-
-struct cursor {
-	int block;
-	int line;
-	int line_block;
-	int pos; //position inside the line block
-};
-
-struct text_box_start {
-	int block;
-	int line;
-};
-
-struct block {
-	struct line* first;
-	int lenght; //Number of lines
-	struct block *next;
-};
-
-struct line {
-	char val[LINE_LENGHT];
-	struct line* cont;
-	struct line* next;
-};
-
-void print_cursor(struct cursor curs, struct text_box_start ts){
-	int x, y;
+void print_cursor(struct cursor curs, struct text_box_start ts, struct block *blk){
+	int x, y, i;
+	struct line *curr_line;
+	curr_line = blk->first;
 	// block stuff
+	/* get line lenght */
+	for (i = 0; i <= curs.line && curr_line != NULL; i++){
+		curr_line = curr_line->next;
+	}
+	for (i = 0; i <= curs.line_block && curr_line != NULL; i++){
+		curr_line = curr_line->cont;
+	}
 	y = curs.line - ts.line;
-	x = curs.line_block * LINE_LENGHT + curs.pos;
-	printf("\033[%d;%dH", y, x);
+	x = i * LINE_LENGHT + curs.pos;
 }
 
 struct block * load_block(FILE* fp){
@@ -120,7 +104,7 @@ int main(int argc, char *argv[])
 	int tmp;
 	struct block *bl;
 	struct text_box_start ts;
-	struct cursor curs;
+	struct page pg;
 	bool ref; //refresh screen
 
 	/* If no file specified, exit */
@@ -144,17 +128,15 @@ int main(int argc, char *argv[])
 	/* Initialize text box and cursor*/
 	ts.block = 0;
 	ts.line = 0;
-	curs.block = 0;
-	curs.line = 0;
-	curs.line_block = 0;
-	curs.pos = 0;
-
+	cursor_init();
 	
-	/* Load block */
-	bl = load_block(fp);
+	/* Load page */
+	bl = load_block(fp); //TODO refactori
+	pg.first = bl;
 
 	/* Print content of block */
 	print_bl(bl, w.ws_row, ts);
+	cursor_print(ts, pg);
 
 	/* 
 		Get user input
@@ -162,11 +144,13 @@ int main(int argc, char *argv[])
 	*/
 	do {
 		tmp = getchar();
-		if (tmp == 'k' && curs.line > 0){
-			(curs.line)--;
-		} else if (tmp == 'j' && curs.line < bl->lenght - w.ws_row){
-			(curs.line)++;
-		} else if (tmp == 'l'){
+		if (tmp == 'k'){
+			cursor_mv_up(pg);
+		} else if (tmp == 'j'){
+			cursor_mv_down(pg);
+		} 
+		/*
+		else if (tmp == 'l'){
 			if (curs.pos >= LINE_LENGHT - 1){
 				(curs.line_block)++;
 				curs.pos = 0;
@@ -186,8 +170,9 @@ int main(int argc, char *argv[])
 		} else if (curs.line - ts.line < 0){
 			(ts.line)--;
 		}
+		*/
 		clear_screen();
 		print_bl(bl, w.ws_row, ts);
-		print_cursor(curs, ts);			
+		cursor_print(ts, pg);
 	} while (tmp != 'q');
 }
