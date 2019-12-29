@@ -70,10 +70,10 @@ void print_bl(struct block *bl, int line_num, struct text_box_start ts){
 		curr_line = curr_line->next;
 	}
 	for (i = 0; i < line_num && curr_line->next != NULL; i++){
-		printf("%s", curr_line);
+		printf("%s", curr_line->val);
 		cont_line = curr_line->cont;
 		while (cont_line != NULL){
-			printf("%s", cont_line);
+			printf("%s", cont_line->val);
 			cont_line = cont_line->cont;
 		}
 		curr_line = curr_line->next;
@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
 	/* Initialize text box and cursor*/
 	ts.block = 0;
 	ts.line = 0;
-	cursor_init();
+	cursor_init(w.ws_row, &pg);
 	
 	/* Load page */
 	bl = load_block(fp); //TODO refactori
@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
 
 	/* Print content of block */
 	print_bl(bl, w.ws_row, ts);
-	cursor_print(ts, pg);
+	cursor_print(ts);
 
 	/* 
 		Get user input
@@ -130,29 +130,17 @@ int main(int argc, char *argv[])
 	do {
 		tmp = getchar();
 		if (tmp == 'k'){
-			cursor_mv_up(pg);
+			cursor_mv_up();
 		} else if (tmp == 'j'){
-			cursor_mv_down(pg);
+			cursor_mv_down();
 		} else if (tmp == 'l'){
-			cursor_mv_right(pg);
-		} 
-		/*else if (tmp == 'h'){
-			if (curs.pos <= 0){
-				(curs.line_block)--;
-				curs.pos = LINE_LENGHT -1;
-			} else {
-				(curs.pos)--;
-			}
+			cursor_mv_right();
+		} else if (tmp == 'h'){
+			cursor_mv_left();
 		}
-		if (curs.line - ts.line > w.ws_row){
-			(ts.line)++;
-		} else if (curs.line - ts.line < 0){
-			(ts.line)--;
-		}
-		*/
-		ts = cursor_calc_new_ts(ts, w.ws_row); 
+		ts = cursor_calc_new_ts(ts); 
 		clear_screen();
 		print_bl(bl, w.ws_row, ts);
-		cursor_print(ts, pg);
+		cursor_print(ts);
 	} while (tmp != 'q');
 }
