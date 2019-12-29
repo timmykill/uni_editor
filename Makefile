@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -g -pedantic
 LINK = 
 TARGET = uni_editor
-objects = editor.o term_driver.o cursor.o
+objects = editor.o term_driver.o cursor.o strings.o
 
 all: $(objects)
 	$(CC) $(CFLAGS) $(LINK) $(objects) -o $(TARGET)

@@ -1,7 +1,10 @@
-#include "elements.h"
 #include <stdio.h>
 
+#include "elements.h"
+#include "strings.h"
+
 static struct cursor curs;
+static int held_x_pos;
 
 void cursor_init()
 {
@@ -11,26 +14,33 @@ void cursor_init()
 	curs.pos = 0;
 }
 
+struct text_box_start cursor_calc_new_ts(struct text_box_start ts, int rows)
+{
+	
+	if (curs.line - ts.line > rows)
+		(ts.line)++;
+	else if (curs.line - ts.line < 0)
+		(ts.line)--;
+	return ts;
+}
+
 void cursor_print(struct text_box_start ts, struct page pg)
 {
-	int x, y;
+	unsigned int x, y;
 	y = curs.line - ts.line;
-	printf("\033[%d;%dH", y, 0);
+	x = curs.line_block * LINE_LENGHT + curs.pos;
+	printf("\033[%d;%dH", y, x);
 }
 
 void cursor_mv_up(struct page pg)
 {
 	struct block *blk;
-	struct line *l;
 	int i = 0;
 	blk = pg.first;
-	l = blk->first;
-	if (curs.line == 0){
+	if (curs.line == 0 && curs.block > 0){
 		(curs.block)--;
-		/* get to last line in block */
-		for(; l->next != NULL; i++, l = l->next);
-		curs.line = i;
-	} else {
+		curs.line = blk->lenght;
+	} else if (curs.line > 0) {
 		(curs.line)--;
 	}
 }
@@ -38,16 +48,31 @@ void cursor_mv_up(struct page pg)
 void cursor_mv_down(struct page pg)
 {
 	struct block *blk;
-	struct line *l;
-	int i = 0;
 	blk = pg.first;
-	l = blk->first;
-	/* get to last line in block */
-	for(; l->next != NULL; i++, l = l->next);
-	if(curs.line == i){
+	if(curs.line == blk->lenght && blk->next != NULL){
 		curs.line = 0;
 		(curs.block)++;
-	} else {
+	} else if (curs.line < blk->lenght){
 		(curs.line)++;
+	}
+}
+
+void cursor_mv_right(struct page pg)
+{
+	struct block *blk;
+	struct line *l;
+	int i, l_len;
+	blk = pg.first;
+	l = blk->first;
+	for(i = 0; i <= curs.line && l->next != NULL; i++, l = l->next);
+	for(i = 0; i <= curs.line_block && l->cont != NULL; i++, l = l->cont);
+	/* l is now the right line block */
+	l_len = safe_strlen(l->val, LINE_LENGHT);
+	
+	if (curs.pos >= l_len && l->cont != NULL){
+		curs.pos = 0;
+		(curs.line_block)++;
+	} else if (curs.pos < l_len){
+		(curs.pos)++;
 	}
 }

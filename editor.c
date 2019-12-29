@@ -10,22 +10,6 @@
 #include "elements.h"
 #include "cursor.h"
 
-void print_cursor(struct cursor curs, struct text_box_start ts, struct block *blk){
-	int x, y, i;
-	struct line *curr_line;
-	curr_line = blk->first;
-	// block stuff
-	/* get line lenght */
-	for (i = 0; i <= curs.line && curr_line != NULL; i++){
-		curr_line = curr_line->next;
-	}
-	for (i = 0; i <= curs.line_block && curr_line != NULL; i++){
-		curr_line = curr_line->cont;
-	}
-	y = curs.line - ts.line;
-	x = i * LINE_LENGHT + curs.pos;
-}
-
 struct block * load_block(FILE* fp){
 	struct block *bl;
 	struct line* curr_line;
@@ -68,6 +52,7 @@ struct block * load_block(FILE* fp){
 			curr_line->val[i++] = (char) tmp;	
 		}
 	} while(tmp != EOF);
+	bl->last = curr_line;
 	return bl;
 }
 
@@ -148,16 +133,10 @@ int main(int argc, char *argv[])
 			cursor_mv_up(pg);
 		} else if (tmp == 'j'){
 			cursor_mv_down(pg);
+		} else if (tmp == 'l'){
+			cursor_mv_right(pg);
 		} 
-		/*
-		else if (tmp == 'l'){
-			if (curs.pos >= LINE_LENGHT - 1){
-				(curs.line_block)++;
-				curs.pos = 0;
-			} else {
-				(curs.pos)++;
-			}
-		} else if (tmp == 'h'){
+		/*else if (tmp == 'h'){
 			if (curs.pos <= 0){
 				(curs.line_block)--;
 				curs.pos = LINE_LENGHT -1;
@@ -171,6 +150,7 @@ int main(int argc, char *argv[])
 			(ts.line)--;
 		}
 		*/
+		ts = cursor_calc_new_ts(ts, w.ws_row); 
 		clear_screen();
 		print_bl(bl, w.ws_row, ts);
 		cursor_print(ts, pg);

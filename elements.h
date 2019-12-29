@@ -1,3 +1,6 @@
+#ifndef _ELEMENTS_H_
+#define _ELEMENTS_H_
+
 #define LINE_LENGHT 50
 #define BLOCK_SIZE 10000
 
@@ -18,7 +21,8 @@ struct text_box_start {
 };
 
 struct block {
-	struct line* first;
+	struct line *first;
+	struct line *last;
 	int lenght; //Number of lines
 	struct block *next;
 };
@@ -29,3 +33,4 @@ struct line {
 	struct line* next;
 };
 
+#endif
