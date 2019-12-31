@@ -5,14 +5,8 @@
 #define BLOCK_SIZE 10000
 
 struct page {
-	struct block *first;
-};
-
-struct cursor {
-	int block;
-	int line;
-	int line_block;
-	int pos; //position inside the line block
+	struct block blk_v;
+	size_t s;
 };
 
 struct text_box_start {
@@ -24,11 +18,11 @@ struct block {
 	struct line *first;
 	struct line *last;
 	int lenght; //Number of lines
-	struct block *next;
 };
 
 struct line {
-	char val[LINE_LENGHT];
+	char * val;
+	size_t s;
 	struct line* cont;
 	struct line* next;
 };

@@ -10,7 +10,23 @@
 #include "elements.h"
 #include "cursor.h"
 
-struct block * load_block(FILE* fp){
+struct page load_page(FILE* fp)
+{
+	struct page pg;
+	struct block * tmp_blk;
+	struct block tmp_blk_v[5];
+	struct block * blk_v;
+
+	
+	do {
+		tmp_blk = load_block(fp);
+
+
+	} while 
+}
+
+struct block * load_block(FILE* fp)
+{
 	struct block *bl;
 	struct line* curr_line;
 	struct line* cont_parent_line;
