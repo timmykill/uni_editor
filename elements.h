@@ -17,7 +17,7 @@ struct text_box_start {
 struct block {
 	struct line *first;
 	struct line *last;
-	int lenght; //Number of lines
+	size_t lenght; //Number of lines
 };
 
 struct line {

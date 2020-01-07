@@ -12,17 +12,34 @@
 
 struct page load_page(FILE* fp)
 {
+	const size_t BLK_VEC_SIZE = 5;
+	const size_t CHAR_VEC_SIZE = 100;
 	struct page pg;
 	struct block * tmp_blk;
-	struct block tmp_blk_v[5];
+	struct block tmp_blk_v[BLK_VEC_SIZE];
 	struct block * blk_v;
-
+	struct line * tmp_l;
+	struct char tmp_s[CHAR_VEC_SIZE];
+	int tmp_c;
 	
+	/* init memory */
+	tmp_blk = malloc(sizeof(struct block));
+	tmp_l = malloc(sizeof(struct line));
+	tmp_blk->first = NULL;
+	tmp_blk->last = NULL;
+	tmp_blk->lenght = 0;
+	tmp_blk_v[0] = tmp_blk;
+
 	do {
-		tmp_blk = load_block(fp);
+		/* TODO more error checking */
+		tmp_c = fgetc(fp);
+		/* load block */
+		if (tmp_blk->lenght >= BLOCK_SIZE){
+			
+		}
+		
+	} while (tmp_c != EOF);
 
-
-	} while 
 }
 
 struct block * load_block(FILE* fp)
