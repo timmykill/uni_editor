@@ -92,3 +92,25 @@ When you set the terminal to raw mode, newline will no longer be converted to ca
 ``` c
 #define gotoxy(x,y) printf("\033[%d;%dH", (y), (x))
 ```
+
+
+## How to get arrow keys
+``` c
+if (getch() == '\033') { // if the first value is esc
+	getch(); // skip the [
+		switch(getch()) { // the real value
+			case 'A':
+			// code for arrow up
+			break;
+			case 'B':
+			// code for arrow down
+			break;
+			case 'C':
+			// code for arrow right
+			break;
+			case 'D':
+			// code for arrow left
+			break;
+		}
+}
+```

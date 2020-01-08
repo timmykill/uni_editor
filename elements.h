@@ -5,7 +5,7 @@
 #define BLOCK_SIZE 10000
 
 
-struct text_box_start {
+struct page_coord {
 	int block;
 	int line;
 };
@@ -13,6 +13,9 @@ struct text_box_start {
 struct line {
 	char * val;
 	size_t s;
+	bool gap;
+	unsigned int gap_start;
+	unsigned int gap_end;
 	struct line* cont; //kinda deprecated
 	struct line* prev;
 	struct line* next;
@@ -21,12 +24,17 @@ struct line {
 struct block {
 	struct line *first;
 	struct line *last;
-	size_t lenght; //Number of lines
+	size_t s; //Number of lines
 };
 
 struct page {
 	struct block **blk_v;
 	size_t s;
+};
+
+struct cursor {
+	unsigned int x;
+	unsigned int y;
 };
 
 #endif

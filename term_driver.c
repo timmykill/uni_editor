@@ -25,4 +25,7 @@ void clear_screen()
 	write(STDOUT_FILENO, CLEAR_SCREEN_ANSI, 12);
 }
 
-
+void print_cursor(unsigned int x, unsigned int y)
+{
+	printf("\033[%d;%dH", y, x);
+}
