@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <strings.h>
+#include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <unistd.h>
@@ -8,110 +8,108 @@
 
 #include "term_driver.h"
 #include "elements.h"
-#include "cursor.h"
+#include "utils.h"
+
+struct block * new_blk()
+{
+	struct block *b;
+	b = malloc(sizeof(struct block));
+	b->first = NULL;
+	b->last = NULL;
+	b->lenght = 0;
+	return b;
+}
+
+struct line * new_line()
+{
+	struct line *l;
+	l = malloc(sizeof(struct line));
+	l->val = NULL;
+	l->s = 0;
+	l->cont = NULL;
+	l->next = NULL;
+	l->prev = NULL;
+}
 
 struct page load_page(FILE* fp)
 {
 	const size_t BLK_VEC_SIZE = 5;
-	const size_t CHAR_VEC_SIZE = 100;
+	const size_t STRING_SIZE = 100;
 	struct page pg;
 	struct block * tmp_blk;
-	struct block tmp_blk_v[BLK_VEC_SIZE];
+	struct block *tmp_blk_v[BLK_VEC_SIZE];
+	size_t tmp_blk_v_size = 0;
 	struct block * blk_v;
 	struct line * tmp_l;
-	struct char tmp_s[CHAR_VEC_SIZE];
+	char tmp_s[STRING_SIZE];
+	size_t tmp_s_size = 0;
 	int tmp_c;
 	
 	/* init memory */
-	tmp_blk = malloc(sizeof(struct block));
-	tmp_l = malloc(sizeof(struct line));
-	tmp_blk->first = NULL;
-	tmp_blk->last = NULL;
-	tmp_blk->lenght = 0;
-	tmp_blk_v[0] = tmp_blk;
+	tmp_blk = new_blk();
+	tmp_l = new_line();
+	tmp_blk_v[tmp_blk_v_size++] = tmp_blk;
+	tmp_blk->first = tmp_l;
 
 	do {
-		/* TODO more error checking */
-		tmp_c = fgetc(fp);
 		/* load block */
 		if (tmp_blk->lenght >= BLOCK_SIZE){
-			
-		}
-		
-	} while (tmp_c != EOF);
-
-}
-
-struct block * load_block(FILE* fp)
-{
-	struct block *bl;
-	struct line* curr_line;
-	struct line* cont_parent_line;
-	int tmp, i = 0;
-	bool cont = false;
-	bl = malloc(sizeof(struct block));
-	bl->first = malloc(sizeof(struct line));
-	bl->lenght = 0;
-	curr_line = bl->first;
-	curr_line->cont = NULL;
-	curr_line->next = NULL;
-	do {
-		tmp = fgetc(fp);
-		if (tmp == '\n') {
-			bl->lenght++;
-			curr_line->val[i] = '\0';
-			if (cont){
-				curr_line = cont_parent_line;
-				cont = false;
+			if (tmp_blk_v_size +1>= BLK_VEC_SIZE) {
+				/* TODO what to do here */
+				die("Not implemented, BLK_SIZE_MAX");
+			} else {
+				tmp_blk->last = tmp_l;
+				tmp_blk = new_blk();
+				tmp_blk_v[tmp_blk_v_size++] = tmp_blk;
 			}
-			curr_line->next = malloc(sizeof(struct line));
-			curr_line = curr_line->next;
-			curr_line->cont = NULL;
-			curr_line->next = NULL;
-			i = 0;
-		} else if (i >= LINE_LENGHT - 1) {
-			curr_line->val[i] = '\0';
-			curr_line->cont = malloc(sizeof(struct line));
-			if (!cont){
-				cont = true;
-				cont_parent_line = curr_line;
-			}
-			curr_line = curr_line->cont;
-			curr_line->cont = NULL;
-			curr_line->next = NULL;
-			i = 0;
-			curr_line->val[i++] = (char) tmp;	
 		} else {
-			curr_line->val[i++] = (char) tmp;	
+			/* TODO more error checking */
+			tmp_c = fgetc(fp);
+			if (tmp_s_size +1 >= STRING_SIZE){
+				/*TODO what to do here */
+				die("Not implemented, STRING_SIZE_MAX");
+			}
+			if(tmp_c == '\n'){
+				tmp_l->next = new_line();
+				/*sizeof(char) redundant, still it's correct*/
+				tmp_s[tmp_s_size++] = '\0';
+				tmp_l->s = tmp_s_size;
+				tmp_l->val = malloc(sizeof(char) * tmp_s_size);
+				memcpy(tmp_l->val, tmp_s, sizeof(char) * tmp_s_size);
+				(tmp_l->next)->prev = tmp_l;
+				tmp_l = tmp_l->next;
+				tmp_s_size = 0;
+			} else {
+				tmp_s[tmp_s_size++] = tmp_c;
+			}
+
 		}
-	} while(tmp != EOF);
-	bl->last = curr_line;
-	return bl;
+	} while (tmp_c != EOF);
+	/* we still have the last line if file didnt end with \n
+	tmp_l->next = new_line();
+	tmp_l->val = malloc(sizeof(char) * (tmp_s_size + 1));
+	memcpy(tmp_l->val, tmp_s, sizeof(char) * tmp_s_size);
+	(tmp_l->next)->prev = tmp_l;
+	tmp_l = tmp_l->next;
+	*/
+	tmp_blk->last = tmp_l;
+
+	pg.blk_v = malloc(sizeof(struct block *) * tmp_blk_v_size);
+	memcpy(pg.blk_v, tmp_blk_v, sizeof(struct block *) * tmp_blk_v_size);
+	pg.s = tmp_blk_v_size;
+	return pg;
 }
 
-void print_bl(struct block *bl, int line_num, struct text_box_start ts){
-	int i;
-	struct line *curr_line, *cont_line;
-	struct block *curr_block;
-	curr_line = bl->first;
-	/* get to right block */
-	for (i = 0; i < ts.block && bl->next != NULL; i++){
-		curr_block = curr_block->next;
-	}
-	/* get to right line */
-	for (i = 0; i < ts.line && curr_line->next != NULL; i++){
-		curr_line = curr_line->next;
-	}
-	for (i = 0; i < line_num && curr_line->next != NULL; i++){
-		printf("%s", curr_line->val);
-		cont_line = curr_line->cont;
-		while (cont_line != NULL){
-			printf("%s", cont_line->val);
-			cont_line = cont_line->cont;
+void print_page(struct page pg)
+{
+	size_t i;
+	struct line * l;
+	for(i = 0; i < pg.s; i++){
+		l = pg.blk_v[i]->first;
+		while(l != NULL){
+			printf("%s\r\n", l->val);
+			l = l->next;
 		}
-		curr_line = curr_line->next;
-		putchar('\r');
-		putchar('\n');
 	}
 }
 
@@ -120,23 +118,20 @@ int main(int argc, char *argv[])
 {
 	struct winsize w;
 	int tmp;
-	struct block *bl;
-	struct text_box_start ts;
 	struct page pg;
+	struct text_box_start ts;
 	bool ref; //refresh screen
+	FILE *fp;
 
 	/* If no file specified, exit */
-	if (argc != 2){
-		fprintf(stderr, "Wrong number of args, specify a file\r\n");
-		exit(1);
-	}
+	if (argc != 2)
+		die("Wrong number of args, specify a file");
 
 	/* Load file */
-	FILE * fp = fopen(argv[1], "r");
-	if (fp == NULL){
-		fprintf(stderr, "Couldn't read the file\r\n");
-		exit(1);
-	}
+	fp = fopen(argv[1], "r");
+	if (fp == NULL)
+		die("Couldn't read the file");
+	
 	/* Clear screen, set it raw, and get terminal size */
 	clear_screen();
 	ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
@@ -146,34 +141,20 @@ int main(int argc, char *argv[])
 	/* Initialize text box and cursor*/
 	ts.block = 0;
 	ts.line = 0;
-	cursor_init(w.ws_row, &pg);
 	
 	/* Load page */
-	bl = load_block(fp); //TODO refactori
-	pg.first = bl;
+	pg = load_page(fp); 
 
 	/* Print content of block */
-	print_bl(bl, w.ws_row, ts);
-	cursor_print(ts);
+	print_page(pg);
 
-	/* 
-		Get user input
-		TODO add block support
-	*/
+	/* 	Get user input	*/
 	do {
 		tmp = getchar();
 		if (tmp == 'k'){
-			cursor_mv_up();
 		} else if (tmp == 'j'){
-			cursor_mv_down();
 		} else if (tmp == 'l'){
-			cursor_mv_right();
 		} else if (tmp == 'h'){
-			cursor_mv_left();
 		}
-		ts = cursor_calc_new_ts(ts); 
-		clear_screen();
-		print_bl(bl, w.ws_row, ts);
-		cursor_print(ts);
 	} while (tmp != 'q');
 }

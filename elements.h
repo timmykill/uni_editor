@@ -4,14 +4,18 @@
 #define LINE_LENGHT 50
 #define BLOCK_SIZE 10000
 
-struct page {
-	struct block blk_v;
-	size_t s;
-};
 
 struct text_box_start {
 	int block;
 	int line;
+};
+
+struct line {
+	char * val;
+	size_t s;
+	struct line* cont; //kinda deprecated
+	struct line* prev;
+	struct line* next;
 };
 
 struct block {
@@ -20,11 +24,9 @@ struct block {
 	size_t lenght; //Number of lines
 };
 
-struct line {
-	char * val;
+struct page {
+	struct block **blk_v;
 	size_t s;
-	struct line* cont;
-	struct line* next;
 };
 
 #endif
