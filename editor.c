@@ -32,8 +32,6 @@ struct line * new_line()
 	l = malloc(sizeof(struct line));
 	l->val = NULL;
 	l->s = 0;
-	l->gap = false;
-	l->cont = NULL;
 	l->next = NULL;
 	l->prev = NULL;
 }
@@ -116,11 +114,10 @@ struct page load_page(FILE* fp)
 			}
 			if(tmp_c == '\n'){
 				tmp_l->next = new_line();
-				/*sizeof(char) redundant, still it's correct*/
 				tmp_s[tmp_s_size++] = '\0';
 				tmp_l->s = tmp_s_size;
-				tmp_l->val = malloc(sizeof(char) * tmp_s_size);
-				memcpy(tmp_l->val, tmp_s, sizeof(char) * tmp_s_size);
+				tmp_l->val = malloc(tmp_s_size);
+				memcpy(tmp_l->val, tmp_s, tmp_s_size);
 				(tmp_l->next)->prev = tmp_l;
 				tmp_l = tmp_l->next;
 				tmp_s_size = 0;
@@ -133,8 +130,8 @@ struct page load_page(FILE* fp)
 	} while (tmp_c != EOF);
 	/* we still have the last line if file didnt end with \n
 	tmp_l->next = new_line();
-	tmp_l->val = malloc(sizeof(char) * (tmp_s_size + 1));
-	memcpy(tmp_l->val, tmp_s, sizeof(char) * tmp_s_size);
+	tmp_l->val = malloc(tmp_s_size + 1);
+	memcpy(tmp_l->val, tmp_s, tmp_s_size);
 	(tmp_l->next)->prev = tmp_l;
 	tmp_l = tmp_l->next;
 	*/
@@ -155,14 +152,12 @@ void print_page(struct page pg)
 		l = pg.blk_v[i]->first;
 		while(l != NULL){
 			if (l == curr_l){
-				for(j = 0; j < gap_start; j++)
-					putchar(l->val[j]);
-				for(j = gap_end; l->val[j] != '\0'; j++)
-					putchar(l->val[j]);
-				printf("\r\n");
+				write(STDOUT_FILENO, l->val, gap_start);
+				write(STDOUT_FILENO, l->val + gap_end, l->s - gap_end);
 			} else {
-				printf("%s\r\n", l->val);
+				write(STDOUT_FILENO, l->val, l->s);
 			}
+				write(STDOUT_FILENO, "\r\n", 2);
 			l = l->next;
 		}
 	}
@@ -228,12 +223,35 @@ void capture_arrow(unsigned int y_const)
 	}
 }
 
+void newline()
+{
+	struct line *l;
+	size_t nl_s;
+	l = new_line();
+	
+	nl_s = curr_l->s - gap_end; 
+	l->val = malloc(nl_s);
+	memcpy(l->val, curr_l->val + gap_end, nl_s);
+	l->s = nl_s;
+	gap_end = curr_l->s;
+	
+	l->next = curr_l->next;
+	curr_l->next = l;
+	l->prev = curr_l;
+	curs_l++;
+	
+	rem_gap();
+	curr_l = l;
+	gap_start = 0;
+	make_gap();
+}
+
 int main(int argc, char *argv[])
 {
 	struct winsize w;
+	struct line *tmp_l;
 	int tmp;
 	struct page pg;
-	bool ref; //refresh screen
 	FILE *in, *out;
 
 	/* If no file specified, exit */
@@ -275,12 +293,28 @@ int main(int argc, char *argv[])
 		if (tmp == '\033'){
 			capture_arrow(pg.blk_v[0]->s);
 		/*backspace or delete chars*/
-		} else if ((tmp == 127 || tmp == 8 ) && gap_start > 0){
-			gap_start--;
+		} else if (tmp == 127 || tmp == 8){
+			if (gap_start > 0){
+				gap_start--;
+			} else if (curs_l > 0){
+				curr_l->next->prev = curr_l->prev;
+				curr_l->prev->next = curr_l->next;
+				tmp_l = curr_l;
+				curr_l = curr_l->prev;
+				free(tmp_l->val);
+				free(tmp_l);
+				make_gap();
+				curs_l--;
+				(pg.blk_v[0]->s)--;
+			}
+		} else if (tmp == '\n'){
+			newline();
+			(pg.blk_v[0]->s)++;
 		} else if (tmp == 's'){
 			save_to_file(out, pg);
 		} else {
 			curr_l->val[gap_start++] = (char) tmp;
+
 		}	
 		print_page(pg);
 		print_cursor(gap_start, curs_l);

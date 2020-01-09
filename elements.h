@@ -13,10 +13,6 @@ struct page_coord {
 struct line {
 	char * val;
 	size_t s;
-	bool gap;
-	unsigned int gap_start;
-	unsigned int gap_end;
-	struct line* cont; //kinda deprecated
 	struct line* prev;
 	struct line* next;
 };

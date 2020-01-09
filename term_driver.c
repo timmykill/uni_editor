@@ -17,16 +17,16 @@ void prep_term()
 	tcgetattr(STDIN_FILENO, &oldt);
 	newt = oldt;
 	newt.c_lflag &= ~(ICANON | ECHO);          
-	tcsetattr( STDIN_FILENO, TCSANOW, &newt);	
+	tcsetattr(STDIN_FILENO, TCSANOW, &newt);	
 }
 
 void clear_screen()
 {
 	const char *CLEAR_SCREEN_ANSI = "\x1B[1;1H\x1B[2J";
-	write(STDOUT_FILENO, CLEAR_SCREEN_ANSI, 12);
+	write(STDOUT_FILENO, CLEAR_SCREEN_ANSI, 11);
 }
 
 void print_cursor(unsigned int x, unsigned int y)
 {
-	printf("\033[%d;%dH", y, x);
+	printf("\033[%d;%dH", y+1, x+1);
 }
