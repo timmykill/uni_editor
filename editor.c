@@ -12,9 +12,9 @@
 
 
 /* global vars */
-struct cursor curs;
 struct line * curr_l;
 unsigned int gap_start, gap_end;
+unsigned int curs_l;
 
 struct block * new_blk()
 {
@@ -40,7 +40,18 @@ struct line * new_line()
 
 void rem_gap()
 {
-	/* TODO later */
+	size_t n_size, g_size;
+	char * normal_val;
+	g_size = curr_l->s;
+	n_size = g_size - (gap_end - gap_start);
+	
+	normal_val = malloc(n_size);
+	memcpy(normal_val, curr_l->val, gap_start);
+	memcpy(normal_val + gap_start, curr_l->val + gap_end, g_size - gap_end);
+
+	curr_l->s = n_size;
+	free(curr_l->val);
+	curr_l->val = normal_val;
 }
 
 void make_gap()
@@ -48,24 +59,17 @@ void make_gap()
 	unsigned int GAP_SIZE = 100;
 	size_t n_size, g_size;
 	char * gapped_val;
-	
-	if (curr_l->gap == true)
-		return;
 
 	n_size = curr_l->s;
 	g_size = n_size + GAP_SIZE;
 
-	gapped_val = malloc(sizeof(char) * g_size);
-	memcpy(gapped_val, curr_l->val, n_size/2);
-	memcpy(gapped_val + n_size/2 + GAP_SIZE, curr_l->val + n_size/2, n_size/2);
+	gapped_val = malloc(g_size);
+	memcpy(gapped_val, curr_l->val, gap_start);
+	memcpy(gapped_val + gap_start + GAP_SIZE , curr_l->val + gap_start, n_size - gap_start);
 
-	curr_l->gap_start = n_size/2; 
-	curr_l->gap_end = n_size/2 + GAP_SIZE ;
-
-	curr_l->gap = true;
+	gap_end = gap_start + GAP_SIZE;
 	curr_l->s = g_size;
 	free(curr_l->val);
-
 	curr_l->val = gapped_val;
 }
 
@@ -144,54 +148,82 @@ struct page load_page(FILE* fp)
 
 void print_page(struct page pg)
 {
-	/* j to catch cursor */
 	size_t i, j;
 	struct line * l;
 	clear_screen();
 	for(i = 0; i < pg.s; i++){
 		l = pg.blk_v[i]->first;
 		while(l != NULL){
-			if (l->gap == true){
-				for(j = 0; j < l->gap_start; j++)
+			if (l == curr_l){
+				for(j = 0; j < gap_start; j++)
 					putchar(l->val[j]);
-				for(j = l->gap_end; l->val[j] != '\0'; j++)
+				for(j = gap_end; l->val[j] != '\0'; j++)
 					putchar(l->val[j]);
 				printf("\r\n");
+			} else {
+				printf("%s\r\n", l->val);
 			}
-			printf("%s\r\n", l->val);
 			l = l->next;
 		}
 	}
 }
 
-void manage_cursor(unsigned int y_const)
+void save_to_file(FILE * fp, struct page pg)
+{
+	struct line *l;
+	int i;
+	rem_gap();
+	rewind(fp);
+	for (i = 0; i < pg.s; i++) 
+		for(l = pg.blk_v[i]->first; l != NULL; l = l->next)
+			fprintf(fp, "%s\n", l->val);
+	make_gap();
+}
+
+void capture_arrow(unsigned int y_const)
 {
 	/* for now every line starts at zero */
 	getchar();
 	switch(getchar()) {
 		case 'A':
-			if (curs.y > 1){
-				curs.y--;
-				curr_l = curr_l->prev;
-				make_gap();
-			}
-			curs.x = 0;
+			if (curs_l == 0)
+				break;
+			/* else, go up */
+			rem_gap();
+			gap_start = 0;
+			if (curr_l->prev == NULL)
+				die("Line has no prev");
+			curr_l = curr_l->prev;
+			curs_l--;
+			make_gap();
 			break;
 		case 'B':
-			if (curs.y < y_const) {
-				curs.y++;
+			if (curs_l >= y_const)
+				break;
+			/* else, go down */
+			rem_gap();
+			gap_start = 0;
+			if (curr_l->next != NULL){
+				curs_l++;
 				curr_l = curr_l->next;
 				make_gap();
+			} else {
+				make_gap();
 			}
-			curs.x = 0;
 			break;
 		case 'C':
-			if (curs.x < curr_l->s)
-				curs.x++;
+			if (gap_end >= curr_l->s)
+				break;
+			curr_l->val[gap_start] = curr_l->val[gap_end];
+			gap_start++;
+			gap_end++;
 			break;
 		case 'D':
-			if (curs.x > 0)
-				curs.x--;
+			if (gap_start == 0)
+				break;
+			curr_l->val[gap_start] = curr_l->val[gap_end];
+			gap_start--;
+			gap_end--;
 			break;
 	}
 }
@@ -202,16 +234,17 @@ int main(int argc, char *argv[])
 	int tmp;
 	struct page pg;
 	bool ref; //refresh screen
-	FILE *fp;
+	FILE *in, *out;
 
 	/* If no file specified, exit */
 	if (argc != 2)
 		die("Wrong number of args, specify a file");
 
 	/* Load file */
-	fp = fopen(argv[1], "r");
-	if (fp == NULL)
-		die("Couldn't read the file");
+	in = fopen(argv[1], "r");
+	out = fopen("test.txt", "w");
+	if (in == NULL || out == NULL)
+		die("Couldn't read|write the file");
 	
 	/* Clear screen, set it raw, and get terminal size */
 	clear_screen();
@@ -220,8 +253,11 @@ int main(int argc, char *argv[])
 	atexit(restore_term);
 
 	/* Load page */
-	pg = load_page(fp); 
+	pg = load_page(in); 
 	curr_l = pg.blk_v[0]->first;
+	gap_start = 0;
+	curs_l = 0;
+	make_gap();
 
 	/* if file is bigger than screen die, for now */
 	if( pg.s > 1 || (unsigned short) pg.blk_v[0]->s > w.ws_row)
@@ -229,20 +265,24 @@ int main(int argc, char *argv[])
 
 	/* Print content of page*/
 	print_page(pg);
-	make_gap();
 
 	/* Initialize text box and cursor*/
-	curs.x = 1;
-	curs.y = 1;
-	print_cursor(1,1);
-
+	print_cursor(gap_start, curs_l);
 
 	/* 	Get user input	*/
 	do {
 		tmp = getchar();
-		if (tmp == '\033')
-			manage_cursor(pg.blk_v[0]->s);
+		if (tmp == '\033'){
+			capture_arrow(pg.blk_v[0]->s);
+		/*backspace or delete chars*/
+		} else if ((tmp == 127 || tmp == 8 ) && gap_start > 0){
+			gap_start--;
+		} else if (tmp == 's'){
+			save_to_file(out, pg);
+		} else {
+			curr_l->val[gap_start++] = (char) tmp;
+		}	
 		print_page(pg);
-		print_cursor(curs.x, curs.y);
+		print_cursor(gap_start, curs_l);
 	} while (tmp != 'q');
 }
