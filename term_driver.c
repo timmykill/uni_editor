@@ -28,5 +28,5 @@ void clear_screen()
 
 void print_cursor(unsigned int x, unsigned int y)
 {
-	printf("\033[%d;%dH", y+1, x+1);
+	write(STDOUT_FILENO, "\033[%d;%dH", y+1, x+1);
 }

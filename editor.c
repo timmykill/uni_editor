@@ -51,7 +51,6 @@ void make_gap()
 	curr_l->val = gapped_val;
 }
 
-
 void print_page(struct page pg)
 {
 	size_t i, j;
@@ -71,7 +70,6 @@ void print_page(struct page pg)
 		}
 	}
 }
-
 
 
 void capture_arrow(unsigned int y_const)
@@ -145,10 +143,28 @@ void newline()
 	make_gap();
 }
 
+void remline()
+{
+	struct line *tmp_l;
+	char * new_v;
+	curr_l->next->prev = curr_l->prev;
+	curr_l->prev->next = curr_l->next;
+	tmp_l = curr_l;
+	curr_l = curr_l->prev;
+	/* append deleted line to current */
+	new_v = realloc(curr_l->val, tmp_l->s + curr_l->s);
+	memcpy(new_v + curr_l->s, tmp_l->val, tmp_l->s);
+	curr_l->s += tmp_l->s;
+	curr_l->val = new_v;
+	free(tmp_l->val);
+	free(tmp_l);
+	make_gap();
+	curs_l--;
+}
+
 int main(int argc, char *argv[])
 {
 	struct winsize w;
-	struct line *tmp_l;
 	int tmp;
 	struct page pg;
 	FILE *in, *out;
@@ -196,14 +212,7 @@ int main(int argc, char *argv[])
 			if (gap_start > 0){
 				gap_start--;
 			} else if (curs_l > 0){
-				curr_l->next->prev = curr_l->prev;
-				curr_l->prev->next = curr_l->next;
-				tmp_l = curr_l;
-				curr_l = curr_l->prev;
-				free(tmp_l->val);
-				free(tmp_l);
-				make_gap();
-				curs_l--;
+				remline();
 				(pg.blk_v[0]->s)--;
 			}
 		} else if (tmp == '\n'){
@@ -215,7 +224,6 @@ int main(int argc, char *argv[])
 			make_gap();
 		} else {
 			curr_l->val[gap_start++] = (char) tmp;
-
 		}	
 		print_page(pg);
 		print_cursor(gap_start, curs_l);
