@@ -12,7 +12,6 @@ char * malloc_safe(size_t size, char* fail_string)
 
 }
 
-
 void die(char* error)
 {
 	perror(error);

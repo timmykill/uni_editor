@@ -7,34 +7,14 @@
 #include <termios.h>
 
 #include "term_driver.h"
-#include "elements.h"
+#include "types.h"
 #include "utils.h"
-
+#include "file.h"
 
 /* global vars */
 struct line * curr_l;
 unsigned int gap_start, gap_end;
 unsigned int curs_l;
-
-struct block * new_blk()
-{
-	struct block *b;
-	b = malloc(sizeof(struct block));
-	b->first = NULL;
-	b->last = NULL;
-	b->s = 0;
-	return b;
-}
-
-struct line * new_line()
-{
-	struct line *l;
-	l = malloc(sizeof(struct line));
-	l->val = NULL;
-	l->s = 0;
-	l->next = NULL;
-	l->prev = NULL;
-}
 
 void rem_gap()
 {
@@ -71,77 +51,6 @@ void make_gap()
 	curr_l->val = gapped_val;
 }
 
-struct page load_page(FILE* fp)
-{
-	const size_t BLK_VEC_SIZE = 5;
-	const size_t STRING_SIZE = 100;
-	struct page pg;
-	struct block * tmp_blk;
-	size_t tmp_blk_size = 0;
-	struct block *tmp_blk_v[BLK_VEC_SIZE];
-	size_t tmp_blk_v_size = 0;
-	struct block * blk_v;
-	struct line * tmp_l;
-	char tmp_s[STRING_SIZE];
-	size_t tmp_s_size = 0;
-	int tmp_c;
-	
-	/* init memory */
-	tmp_blk = new_blk();
-	tmp_l = new_line();
-	tmp_blk_v[tmp_blk_v_size++] = tmp_blk;
-	tmp_blk->first = tmp_l;
-
-	do {
-		/* load block */
-		if (tmp_blk->s >= BLOCK_SIZE){
-			if (tmp_blk_v_size +1>= BLK_VEC_SIZE) {
-				/* TODO what to do here */
-				die("Not implemented, BLK_SIZE_MAX");
-			} else {
-				tmp_blk->last = tmp_l;
-				tmp_blk->s = tmp_blk_size;
-				tmp_blk = new_blk();
-				tmp_blk_v[tmp_blk_v_size++] = tmp_blk;
-				tmp_blk_size = 0;
-			}
-		} else {
-			/* TODO more error checking */
-			tmp_c = fgetc(fp);
-			if (tmp_s_size +1 >= STRING_SIZE){
-				/*TODO what to do here */
-				die("Not implemented, STRING_SIZE_MAX");
-			}
-			if(tmp_c == '\n'){
-				tmp_l->next = new_line();
-				tmp_s[tmp_s_size++] = '\0';
-				tmp_l->s = tmp_s_size;
-				tmp_l->val = malloc(tmp_s_size);
-				memcpy(tmp_l->val, tmp_s, tmp_s_size);
-				(tmp_l->next)->prev = tmp_l;
-				tmp_l = tmp_l->next;
-				tmp_s_size = 0;
-				tmp_blk_size++;
-			} else {
-				tmp_s[tmp_s_size++] = tmp_c;
-			}
-
-		}
-	} while (tmp_c != EOF);
-	/* we still have the last line if file didnt end with \n
-	tmp_l->next = new_line();
-	tmp_l->val = malloc(tmp_s_size + 1);
-	memcpy(tmp_l->val, tmp_s, tmp_s_size);
-	(tmp_l->next)->prev = tmp_l;
-	tmp_l = tmp_l->next;
-	*/
-	tmp_blk->last = tmp_l;
-	tmp_blk->s = tmp_blk_size;
-	pg.blk_v = malloc(sizeof(struct block *) * tmp_blk_v_size);
-	memcpy(pg.blk_v, tmp_blk_v, sizeof(struct block *) * tmp_blk_v_size);
-	pg.s = tmp_blk_v_size;
-	return pg;
-}
 
 void print_page(struct page pg)
 {
@@ -163,17 +72,7 @@ void print_page(struct page pg)
 	}
 }
 
-void save_to_file(FILE * fp, struct page pg)
-{
-	struct line *l;
-	int i;
-	rem_gap();
-	rewind(fp);
-	for (i = 0; i < pg.s; i++) 
-		for(l = pg.blk_v[i]->first; l != NULL; l = l->next)
-			fprintf(fp, "%s\n", l->val);
-	make_gap();
-}
+
 
 void capture_arrow(unsigned int y_const)
 {
@@ -311,7 +210,9 @@ int main(int argc, char *argv[])
 			newline();
 			(pg.blk_v[0]->s)++;
 		} else if (tmp == 's'){
+			rem_gap();
 			save_to_file(out, pg);
+			make_gap();
 		} else {
 			curr_l->val[gap_start++] = (char) tmp;
 
