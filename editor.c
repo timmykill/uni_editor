@@ -71,17 +71,23 @@ void print_page(struct page pg)
 }
 
 /* footer a la nano */
-void print_footer(int rows, int cols)
+void print_footer(int rows, int cols, char *msg)
 {
 	int i;
+	char *c;
 	//delete last 2 lines
 	clear_line(rows-2);
 	for (i = 0; i < cols; i++)
 		write(STDOUT_FILENO, "#", 2);
 	write(STDOUT_FILENO, "\r\n", 3);
-
 	clear_line(rows-1);
-	write(STDOUT_FILENO, "Test footer, s: save in test.txt file, q: quit, arrows to move\r\n", 65);
+	write(STDOUT_FILENO, "         ", 10);
+	write(STDOUT_FILENO, "s: save in test.txt file, q: quit, arrows to move", 50);
+	write(STDOUT_FILENO, "         ", 10);
+	for (c = msg; *c != '\0'; c++) {
+		write(STDOUT_FILENO, c, 1);
+	}
+	write(STDOUT_FILENO, "\r\n", 3);
 }
 
 void capture_arrow(unsigned int y_const)
@@ -211,13 +217,14 @@ int main(int argc, char *argv[])
 	/* Print content of page*/
 	clear_screen();
 	print_page(pg);
-	print_footer(w.ws_row, w.ws_col);
+	print_footer(w.ws_row, w.ws_col, "");
 
 	/* Initialize text box and cursor*/
 	print_cursor(gap_start, curs_l);
 
 	/* 	Get user input	*/
 	do {
+		char *msg = "";
 		tmp = getchar();
 		if (tmp == '\033'){
 			capture_arrow(pg.blk_v[0]->s);
@@ -236,12 +243,13 @@ int main(int argc, char *argv[])
 			rem_gap();
 			save_to_file(out, pg);
 			make_gap();
+			msg = "Saved file";
 		} else {
 			curr_l->val[gap_start++] = (char) tmp;
 		}	
 		clear_screen();
 		print_page(pg);
-		print_footer(w.ws_row, w.ws_col);
+		print_footer(w.ws_row, w.ws_col, msg);
 		print_cursor(gap_start, curs_l);
 	} while (tmp != 'q');
 }
