@@ -3,6 +3,7 @@
 
 void restore_term();
 void prep_term();
+void clear_line();
 void clear_screen();
 /* useless function overhead, useful for brain memory tho */
 void print_cursor();

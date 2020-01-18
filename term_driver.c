@@ -20,6 +20,12 @@ void prep_term()
 	tcsetattr(STDIN_FILENO, TCSANOW, &newt);	
 }
 
+void clear_line(unsigned int line)
+{
+	const char *CLEAR_LINE_ANSI = "\x1B[%d;1H\x1B[K";
+	printf(CLEAR_LINE_ANSI, line);
+}
+
 void clear_screen()
 {
 	const char *CLEAR_SCREEN_ANSI = "\x1B[1;1H\x1B[2J";

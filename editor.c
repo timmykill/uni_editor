@@ -55,7 +55,6 @@ void print_page(struct page pg)
 {
 	size_t i, j;
 	struct line * l;
-	clear_screen();
 	for(i = 0; i < pg.s; i++){
 		l = pg.blk_v[i]->first;
 		while(l != NULL){
@@ -71,6 +70,15 @@ void print_page(struct page pg)
 	}
 }
 
+/* footer a la nano */
+void print_footer(int size)
+{
+	//delete last 2 lines
+	clear_line(size-2);
+	printf("###############\n");
+	clear_line(size-1);
+	printf("Test footer, s: save in test.txt file, q: quit, arrows to move\n");
+}
 
 void capture_arrow(unsigned int y_const)
 {
@@ -197,7 +205,9 @@ int main(int argc, char *argv[])
 		die("File is too big, no scrolling for now");
 
 	/* Print content of page*/
+	clear_screen();
 	print_page(pg);
+	print_footer(w.ws_row);
 
 	/* Initialize text box and cursor*/
 	print_cursor(gap_start, curs_l);
@@ -225,7 +235,9 @@ int main(int argc, char *argv[])
 		} else {
 			curr_l->val[gap_start++] = (char) tmp;
 		}	
+		clear_screen();
 		print_page(pg);
+		print_footer(w.ws_row);
 		print_cursor(gap_start, curs_l);
 	} while (tmp != 'q');
 }
