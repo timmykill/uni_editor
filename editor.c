@@ -64,20 +64,24 @@ void print_page(struct page pg)
 			} else {
 				write(STDOUT_FILENO, l->val, l->s);
 			}
-				write(STDOUT_FILENO, "\r\n", 2);
+				write(STDOUT_FILENO, "\r\n", 3);
 			l = l->next;
 		}
 	}
 }
 
 /* footer a la nano */
-void print_footer(int size)
+void print_footer(int rows, int cols)
 {
+	int i;
 	//delete last 2 lines
-	clear_line(size-2);
-	printf("###############\n");
-	clear_line(size-1);
-	printf("Test footer, s: save in test.txt file, q: quit, arrows to move\n");
+	clear_line(rows-2);
+	for (i = 0; i < cols; i++)
+		write(STDOUT_FILENO, "#", 2);
+	write(STDOUT_FILENO, "\r\n", 3);
+
+	clear_line(rows-1);
+	write(STDOUT_FILENO, "Test footer, s: save in test.txt file, q: quit, arrows to move\r\n", 65);
 }
 
 void capture_arrow(unsigned int y_const)
@@ -207,7 +211,7 @@ int main(int argc, char *argv[])
 	/* Print content of page*/
 	clear_screen();
 	print_page(pg);
-	print_footer(w.ws_row);
+	print_footer(w.ws_row, w.ws_col);
 
 	/* Initialize text box and cursor*/
 	print_cursor(gap_start, curs_l);
@@ -237,7 +241,7 @@ int main(int argc, char *argv[])
 		}	
 		clear_screen();
 		print_page(pg);
-		print_footer(w.ws_row);
+		print_footer(w.ws_row, w.ws_col);
 		print_cursor(gap_start, curs_l);
 	} while (tmp != 'q');
 }
