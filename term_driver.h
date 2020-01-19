@@ -1,11 +1,15 @@
 #ifndef _TERM_DRIVER_H_
 #define _TERM_DRIVER_H_
 
-void restore_term();
+/** Set term flags needed to run the editor */
 void prep_term();
-void clear_line();
+/** Restore previous terminal settings */
+void restore_term();
+/** delete a line of text from output */
+void clear_line(unsigned int line);
+/** delete all text from output */
 void clear_screen();
-/* useless function overhead, useful for brain memory tho */
-void print_cursor();
+/** set the cursor on the coordinates*/
+void print_cursor(unsigned int x, unsigned int y);
 
 #endif

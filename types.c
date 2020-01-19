@@ -2,7 +2,8 @@
 
 #include "types.h"
 
-struct block * new_blk()
+
+truct block * new_blk()
 {
 	struct block *b;
 	b = malloc(sizeof(struct block));

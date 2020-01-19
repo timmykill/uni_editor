@@ -2,12 +2,12 @@
 #include <stdio.h>
 #include <string.h>
 
-
 #include "file.h"
 #include "utils.h"
 
 struct page load_page(FILE* fp)
 {
+	/* Creates buffers for faster computation */
 	const size_t BLK_VEC_SIZE = 5;
 	const size_t STRING_SIZE = 100;
 	struct page pg;
@@ -48,6 +48,7 @@ struct page load_page(FILE* fp)
 				die("Not implemented, STRING_SIZE_MAX");
 			}
 			if(tmp_c == '\n'){
+				/* If there's a newline, place the tmp_s content in a line, and create a new one */
 				tmp_l->next = new_line();
 				tmp_s[tmp_s_size++] = '\0';
 				tmp_l->s = tmp_s_size;
@@ -63,7 +64,7 @@ struct page load_page(FILE* fp)
 
 		}
 	} while (tmp_c != EOF);
-	/* we still have the last line if file didnt end with \n
+	/* we still have the last line if file didnt end with \n (i think)
 	tmp_l->next = new_line();
 	tmp_l->val = malloc(tmp_s_size + 1);
 	memcpy(tmp_l->val, tmp_s, tmp_s_size);

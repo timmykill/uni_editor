@@ -4,34 +4,44 @@
 
 #include "utils.h"
 
+/** Saves the previous terminal settings */
 static struct termios oldt;
 
-void itoa_rec(int l, char* c, size_t s)
+void itoa_rec(int i, char* c, size_t s)
 {
-	*(c+s) = l % 10 + '0';
+	*(c+s) = i % 10 + '0';
 	if (s <= 0)
 		return;
-	if (l/10 != 0)
-		itoa_rec(l/10, c, s-1);
+	if (i/10 != 0)
+		itoa_rec(i/10, c, s-1);
 	else
 		itoa_rec(0, c, s-1);
 }
 
-void itoa(int l, char* buf, size_t s)
+/**
+	Turns an int in to the string rapresentation 
+	@param i Integer to be converted
+	@param buf space where the string will be placed
+	@param s size of the string
+*/
+void itoa(int i, char* buf, size_t s)
 {
-	itoa_rec(l, buf, s-2);
+	itoa_rec(i, buf, s-2);
 	buf[s-1] = '\0';
 }
 
 void restore_term()
 {
-	/* reset term params */
 	tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
 }
 
+/**
+	Set terminal flags
+	~ICANON : Non canonical mode
+	~ECHO : Dont print chars inserted
+*/
 void prep_term()
 {
-	/* Set terminal to get char */
 	struct termios newt;
 	tcgetattr(STDIN_FILENO, &oldt);
 	newt = oldt;
