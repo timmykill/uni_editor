@@ -40,7 +40,7 @@ void rem_gap()
 */
 void make_gap()
 {
-	unsigned int GAP_SIZE = 100;
+	unsigned int GAP_SIZE = 10; 
 	size_t n_size, g_size; //these are for convinience
 	char * gapped_val;
 
@@ -56,7 +56,7 @@ void make_gap()
 	memcpy(gapped_val, curr_l->val, gap_start);
 	memcpy(gapped_val + gap_start + GAP_SIZE , curr_l->val + gap_start, n_size - gap_start);
 
-	/* sets gap_start (cursor position) and gap_end pointers */
+	/* sets gap_start (cursor position) and gap_end (first char after the gap) pointers */
 	gap_end = gap_start + GAP_SIZE;
 	curr_l->s = g_size;
 	free(curr_l->val);
@@ -268,6 +268,10 @@ int main(int argc, char *argv[])
 			make_gap();
 			msg = "Saved file";
 		} else {
+			if( gap_end - gap_start == 1){
+				rem_gap(); //this could be useless
+				make_gap();
+			}
 			curr_l->val[gap_start++] = (char) tmp;
 		}	
 		clear_screen();
