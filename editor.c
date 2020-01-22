@@ -134,18 +134,12 @@ void capture_arrow(unsigned int y_const)
 			}
 			break;
 		case 'C':
-			if (gap_end >= curr_l->s)
-				break;
-			curr_l->val[gap_start] = curr_l->val[gap_end];
-			gap_start++;
-			gap_end++;
+			if (gap_end < curr_l->s)
+				curr_l->val[gap_start++] = curr_l->val[gap_end++];
 			break;
 		case 'D':
-			if (gap_start == 0)
-				break;
-			curr_l->val[gap_start] = curr_l->val[gap_end];
-			gap_start--;
-			gap_end--;
+			if (gap_start != 0)
+				curr_l->val[--gap_end] = curr_l->val[--gap_start];
 			break;
 	}
 }
