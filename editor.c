@@ -10,6 +10,7 @@
 #include "types.h"
 #include "utils.h"
 #include "file.h"
+#include "second_buffer.h"
 
 /* global vars */
 struct line * curr_l;
@@ -203,12 +204,36 @@ void remline()
 	curs_l--;
 }
 
+/**
+	Keeps user input focused on the footer (second buffer)
+	gets file name
+	opens the file and serves it to save_to_file
+*/
+void get_file_and_save(int rows, int cols, struct page pg)
+{
+	int tmp;
+	FILE* fp;
+	print_footer(rows, cols, buf2_get_content());
+	do {
+		tmp = getchar();
+		/* delete or backspace */
+		if (tmp == 127 || tmp == 8)
+			buf2_rm_char();
+		else if (tmp != '\n')
+			buf2_put_char(tmp);
+		print_footer(rows, cols, buf2_get_content());
+	} while (tmp != '\n');
+	fp = fopen(buf2_get_content(), "w");
+	save_to_file(fp, pg);
+}
+
+
 int main(int argc, char *argv[])
 {
 	struct winsize w;
 	int tmp;
 	struct page pg;
-	FILE *in, *out;
+	FILE *in;
 
 	/* If no file specified, exit */
 	if (argc != 2)
@@ -216,9 +241,11 @@ int main(int argc, char *argv[])
 
 	/* Load file */
 	in = fopen(argv[1], "r");
-	out = fopen("test.txt", "w");
-	if (in == NULL || out == NULL)
-		die("Couldn't read|write the file");
+	if (in == NULL)
+		die("Couldn't read the file");
+	
+	/* sets standard write path (conviniance) */
+	buf2_put_string("test.txt");
 	
 	/* Clear screen, set it raw, and get terminal size */
 	clear_screen();
@@ -264,7 +291,7 @@ int main(int argc, char *argv[])
 			(pg.blk_v[0]->s)++;
 		} else if (tmp == 's'){
 			rem_gap();
-			save_to_file(out, pg);
+			get_file_and_save(w.ws_row, w.ws_col, pg);
 			make_gap();
 			msg = "Saved file";
 		} else {

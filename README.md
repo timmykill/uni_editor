@@ -7,7 +7,6 @@ Lo scopo di questo progetto è totalmente educativo.
 # TODO
 
  * Debugging
- * File picker when saving
  * Manage bigger files than the terminal screen
  * Manage files with long lines (during fetch)
 

@@ -3,7 +3,7 @@ CFLAGS = -g -pedantic
 LINK = 
 TARGET = uni_editor
 DOXYFILE = Doxyfile
-objects = editor.o term_driver.o file.o  utils.o types.o
+objects = editor.o term_driver.o file.o  utils.o types.o second_buffer.o
 
 .PHONY : docs
 
