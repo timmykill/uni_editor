@@ -143,7 +143,9 @@ void capture_arrow(unsigned int y_const)
 		case 'D':
 			if (gap_start == 0)
 				break;
-			curr_l->val[gap_start] = curr_l->val[gap_end];
+			gap_start--;
+			gap_end--;
+			curr_l->val[gap_end] = curr_l->val[gap_start];
 			gap_start--;
 			gap_end--;
 			break;
