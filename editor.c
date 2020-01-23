@@ -239,6 +239,7 @@ int main(int argc, char *argv[])
 	pg = load_page(in); 
 	curr_l = pg.blk_v[0]->first;
 	gap_start = 0;
+	held_gap_start=0; //you deserve no scold
 	curs_l = 0;
 	make_gap();
 
