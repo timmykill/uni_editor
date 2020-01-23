@@ -13,7 +13,7 @@
 
 /* global vars */
 struct line * curr_l;
-unsigned int gap_start, gap_end;
+unsigned int gap_start, gap_end, held_gap_start;
 unsigned int curs_l;
 
 /**
@@ -102,6 +102,21 @@ void print_footer(int rows, int cols, char *msg)
 	write(STDOUT_FILENO, "\r\n", 3);
 }
 
+
+void set_new_gap_start()
+{
+	if (gap_start < curr_l->s){
+		if (held_gap_start > gap_start && held_gap_start < curr_l->s)
+			gap_start = held_gap_start;
+		else if (held_gap_start >= curr_l->s)
+			gap_start = curr_l->s -1;
+	} else {
+		held_gap_start = gap_start;
+		gap_start = curr_l->s -1;
+	}	
+}
+
+
 void capture_arrow(unsigned int y_const)
 {
 	/* for now every line starts at zero */
@@ -112,11 +127,11 @@ void capture_arrow(unsigned int y_const)
 				break;
 			/* else, go up */
 			rem_gap();
-			gap_start = 0;
 			if (curr_l->prev == NULL)
 				die("Line has no prev");
 			curr_l = curr_l->prev;
 			curs_l--;
+			set_new_gap_start();
 			make_gap();
 			break;
 		case 'B':
@@ -124,10 +139,10 @@ void capture_arrow(unsigned int y_const)
 				break;
 			/* else, go down */
 			rem_gap();
-			gap_start = 0;
 			if (curr_l->next != NULL){
 				curs_l++;
 				curr_l = curr_l->next;
+				set_new_gap_start();
 				make_gap();
 			} else {
 				make_gap();
