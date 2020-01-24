@@ -12,6 +12,9 @@
 #include "file.h"
 #include "second_buffer.h"
 
+#define PRINT_CURSOR() print_cursor(gap_start - start_long_line, curs_l)
+
+
 /* global vars */
 struct line * curr_l;
 unsigned int gap_start, gap_end, held_gap_start, start_long_line;
@@ -74,8 +77,15 @@ void print_page(struct page pg)
 		l = pg.blk_v[i]->first;
 		while(l != NULL){
 			if (l == curr_l){
-				write(STDOUT_FILENO, l->val, cols < gap_start ? cols : gap_start);
-				write(STDOUT_FILENO, l->val + gap_end, cols < l->s ? cols - gap_start : l->s - gap_end);
+				if (cols < l->s) {
+					if (gap_start < start_long_line)
+						die("something really wrong");
+					write(STDOUT_FILENO, l->val + start_long_line, gap_start - start_long_line);
+					write(STDOUT_FILENO, l->val + gap_end, cols + start_long_line - gap_start);
+				} else {
+					write(STDOUT_FILENO, l->val, gap_start);
+					write(STDOUT_FILENO, l->val + gap_end, l->s - gap_end);	
+				}
 			} else {
 				if (cols < l->s){
 					write(STDOUT_FILENO, l->val, cols - 1);
@@ -84,7 +94,7 @@ void print_page(struct page pg)
 					write(STDOUT_FILENO, l->val, l->s);
 				}
 			}
-				write(STDOUT_FILENO, "\r\n", 3);
+			write(STDOUT_FILENO, "\r\n", 3);
 			l = l->next;
 		}
 	}
@@ -140,6 +150,7 @@ void capture_arrow(unsigned int y_const)
 			curr_l = curr_l->prev;
 			curs_l--;
 			set_new_gap_start();
+			start_long_line = 0;
 			make_gap();
 			break;
 		case 'B':
@@ -151,16 +162,23 @@ void capture_arrow(unsigned int y_const)
 				curs_l++;
 				curr_l = curr_l->next;
 				set_new_gap_start();
+				start_long_line = 0;
 				make_gap();
 			}
 			break;
 		case 'C': /* freccia a destra */
-			if (gap_end < curr_l->s-1 && gap_start < cols)
+			if (gap_end < curr_l->s-1 && gap_start < cols + start_long_line){
 				curr_l->val[gap_start++] = curr_l->val[gap_end++];
+				if (gap_start - start_long_line == cols -1)
+					start_long_line += 10;
+			}
 			break;
 		case 'D': /* freccia a sinistra */
-			if (gap_start != 0)
+			if (gap_start != 0) {
 				curr_l->val[--gap_end] = curr_l->val[--gap_start];
+				if (start_long_line != 0 && gap_start == start_long_line)
+					start_long_line -= 10;
+			}
 			break;
 	}
 }
@@ -195,6 +213,7 @@ void newline()
 	/* i dont like having rem_gap and make_gap here*/
 	rem_gap();
 	curr_l = l;
+	start_long_line = 0;
 	gap_start = 0;
 	make_gap();
 }
@@ -288,7 +307,7 @@ int main(int argc, char *argv[])
 	print_footer("");
 
 	/* Initialize text box and cursor*/
-	print_cursor(gap_start, curs_l);
+	PRINT_CURSOR();
 
 	/* 	Get user input	*/
 	do {
@@ -323,6 +342,6 @@ int main(int argc, char *argv[])
 		clear_screen();
 		print_page(pg);
 		print_footer(msg);
-		print_cursor(gap_start, curs_l);
+		PRINT_CURSOR();
 	} while (tmp != 'q');
 }
