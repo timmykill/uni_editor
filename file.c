@@ -71,6 +71,10 @@ struct page load_page(FILE* fp)
 	(tmp_l->next)->prev = tmp_l;
 	tmp_l = tmp_l->next;
 	*/
+	/* last line is useless */
+	tmp_l = tmp_l->prev;
+	free(tmp_l->next);
+	tmp_l->next = NULL;
 	tmp_blk->last = tmp_l;
 	tmp_blk->s = tmp_blk_size;
 	pg.blk_v = malloc(sizeof(struct block *) * tmp_blk_v_size);
