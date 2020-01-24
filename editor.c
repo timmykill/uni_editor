@@ -139,18 +139,16 @@ void capture_arrow(unsigned int y_const)
 			if (curs_l >= y_const)
 				break;
 			/* else, go down */
-			rem_gap();
 			if (curr_l->next != NULL){
+				rem_gap();
 				curs_l++;
 				curr_l = curr_l->next;
 				set_new_gap_start();
 				make_gap();
-			} else {
-				make_gap();
 			}
 			break;
 		case 'C':
-			if (gap_end < curr_l->s)
+			if (gap_end < curr_l->s-1)
 				curr_l->val[gap_start++] = curr_l->val[gap_end++];
 			break;
 		case 'D':
