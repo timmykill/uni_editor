@@ -150,7 +150,7 @@ void capture_arrow(unsigned int y_const)
 			}
 			break;
 		case 'C':
-			if (gap_end < curr_l->s)
+			if (gap_end < curr_l->s-1)
 				curr_l->val[gap_start++] = curr_l->val[gap_end++];
 			break;
 		case 'D':
