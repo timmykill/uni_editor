@@ -202,7 +202,7 @@ void newline()
 	l->val = malloc(nl_s);
 	memcpy(l->val, curr_l->val + gap_end, nl_s);
 	l->s = nl_s;
-	gap_end = curr_l->s; //i think this is useless
+	gap_end = curr_l->s - 1; 
 	
 	/* sets linked list */
 	l->next = curr_l->next;
@@ -214,6 +214,7 @@ void newline()
 	rem_gap();
 	curr_l = l;
 	start_long_line = 0;
+	held_gap_start = 0;
 	gap_start = 0;
 	make_gap();
 }
