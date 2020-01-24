@@ -14,7 +14,7 @@
 
 /* global vars */
 struct line * curr_l;
-unsigned int gap_start, gap_end, held_gap_start;
+unsigned int gap_start, gap_end, held_gap_start, start_long_line;
 unsigned int curs_l;
 int cols, rows;
 
@@ -77,7 +77,12 @@ void print_page(struct page pg)
 				write(STDOUT_FILENO, l->val, cols < gap_start ? cols : gap_start);
 				write(STDOUT_FILENO, l->val + gap_end, cols < l->s ? cols - gap_start : l->s - gap_end);
 			} else {
-				write(STDOUT_FILENO, l->val, cols < l->s ? cols : l->s);
+				if (cols < l->s){
+					write(STDOUT_FILENO, l->val, cols - 1);
+					write(STDOUT_FILENO, "\x1B[7m>\x1b[0m", 10);
+				} else {
+					write(STDOUT_FILENO, l->val, l->s);
+				}
 			}
 				write(STDOUT_FILENO, "\r\n", 3);
 			l = l->next;
@@ -268,7 +273,8 @@ int main(int argc, char *argv[])
 	pg = load_page(in); 
 	curr_l = pg.blk_v[0]->first;
 	gap_start = 0;
-	held_gap_start=0; //you deserve no scold
+	held_gap_start = 0;
+	start_long_line = 0;
 	curs_l = 0;
 	make_gap();
 
