@@ -246,18 +246,25 @@ void remline()
 void get_file_and_save(struct page pg)
 {	
 	int tmp;
+	struct winsize w;
 	FILE* fp;
 	print_footer(buf2_get_content());
 	/** get char is affected from the timer, so the timer needs to be disabled */
 	disable_timer();
 	do {
-		read(STDIN_FILENO,&tmp,1);
-		/* delete or backspace */
-		if (tmp == 127 || tmp == 8)
-			buf2_rm_char();
-		else if (tmp != '\n')
-			buf2_put_char(tmp);
-		print_footer(buf2_get_content());
+		if (read(STDIN_FILENO,&tmp,1)){
+			/* delete or backspace */
+			if (tmp == 127 || tmp == 8)
+				buf2_rm_char();
+			else if (tmp != '\n')
+				buf2_put_char(tmp);
+			print_footer(buf2_get_content());
+		} else {
+			/*update the size of the terminal*/
+			ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+			cols = w.ws_col;
+			rows = w.ws_row;
+		}
 	} while (tmp != '\n');
 	enable_timer();
 	fp = fopen(buf2_get_content(), "w");
@@ -345,11 +352,11 @@ int main(int argc, char *argv[])
 					curr_l->val[gap_start++] = (char) tmp;
 			}
 		
-		}else{
-		/*update the size of the terminal*/
-		ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-                cols = w.ws_col;
-                rows = w.ws_row;
+		} else {
+			/*update the size of the terminal*/
+			ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+			cols = w.ws_col;
+			rows = w.ws_row;
 		}	
 		clear_screen();
 		print_page(pg);
