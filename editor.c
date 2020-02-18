@@ -341,7 +341,7 @@ int main(int argc, char *argv[])
 					rem_gap(); //this could be useless
 					make_gap();
 				}
-				if (gap_start < cols)
+				if (gap_start < (unsigned int )cols)
 					curr_l->val[gap_start++] = (char) tmp;
 			}
 		
