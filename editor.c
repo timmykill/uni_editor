@@ -244,10 +244,12 @@ void remline()
 	opens the file and serves it to save_to_file
 */
 void get_file_and_save(struct page pg)
-{
+{	
 	int tmp;
 	FILE* fp;
 	print_footer(buf2_get_content());
+	/** get char is affected from the timer, so the timer needs to be disabled */
+	disable_timer();
 	do {
 		tmp = getchar();
 		/* delete or backspace */
@@ -257,6 +259,7 @@ void get_file_and_save(struct page pg)
 			buf2_put_char(tmp);
 		print_footer(buf2_get_content());
 	} while (tmp != '\n');
+	enable_timer();
 	fp = fopen(buf2_get_content(), "w");
 	save_to_file(fp, pg);
 }
@@ -312,33 +315,41 @@ int main(int argc, char *argv[])
 
 	/* 	Get user input	*/
 	do {
+		enable_timer();
 		char *msg = "";
-		tmp = getchar();
-		if (tmp == '\033'){
-			capture_arrow(pg.blk_v[0]->s);
+		if(read(0,&(tmp),sizeof(char))){
+			if (tmp == '\033'){
+				capture_arrow(pg.blk_v[0]->s);
 		/*backspace or delete chars*/
-		} else if (tmp == 127 || tmp == 8){
-			if (gap_start > 0){
-				gap_start--;
-			} else if (curs_l > 0){
-				remline();
-				(pg.blk_v[0]->s)--;
-			}
-		} else if (tmp == '\n'){
-			newline();
-			(pg.blk_v[0]->s)++;
-		} else if (tmp == 's'){
-			rem_gap();
-			get_file_and_save(pg);
-			make_gap();
-			msg = "Saved file";
-		} else {
-			if(gap_end - gap_start == 1){
-				rem_gap(); //this could be useless
+			} else if (tmp == 127 || tmp == 8){
+				if (gap_start > 0){
+					gap_start--;
+				} else if (curs_l > 0){
+					remline();
+					(pg.blk_v[0]->s)--;
+				}
+			} else if (tmp == '\n'){
+				newline();
+				(pg.blk_v[0]->s)++;
+			} else if (tmp == 's'){
+				rem_gap();
+				get_file_and_save(pg);
 				make_gap();
+				msg = "Saved file";
+			} else {
+				if(gap_end - gap_start == 1){
+					rem_gap(); //this could be useless
+					make_gap();
+				}
+				if (gap_start < cols)
+					curr_l->val[gap_start++] = (char) tmp;
 			}
-			if (gap_start < cols)
-				curr_l->val[gap_start++] = (char) tmp;
+		
+		}else{
+		/*update the size of the terminal*/
+		ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+                cols = w.ws_col;
+                rows = w.ws_row;
 		}	
 		clear_screen();
 		print_page(pg);
