@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -g -pedantic
+CFLAGS = -g -Werror -Wpedantic -Wall -Wextra
 LINK = 
 TARGET = uni_editor
 DOXYFILE = Doxyfile

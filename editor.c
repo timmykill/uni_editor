@@ -71,13 +71,13 @@ void make_gap()
 
 void print_page(struct page pg)
 {
-	size_t i, j;
+	size_t i;
 	struct line * l;
 	for(i = 0; i < pg.s; i++){
 		l = pg.blk_v[i]->first;
 		while(l != NULL){
 			if (l == curr_l){
-				if (cols < l->s) {
+				if ((size_t) cols <  l->s) {
 					if (gap_start < start_long_line)
 						die("something really wrong");
 					write(STDOUT_FILENO, l->val + start_long_line, gap_start - start_long_line);
@@ -87,7 +87,7 @@ void print_page(struct page pg)
 					write(STDOUT_FILENO, l->val + gap_end, l->s - gap_end);	
 				}
 			} else {
-				if (cols < l->s){
+				if ((size_t) cols < l->s){
 					write(STDOUT_FILENO, l->val, cols - 1);
 					write(STDOUT_FILENO, "\x1B[7m>\x1b[0m", 10);
 				} else {
@@ -169,7 +169,7 @@ void capture_arrow(unsigned int y_const)
 		case 'C': /* freccia a destra */
 			if (gap_end < curr_l->s-1 && gap_start < cols + start_long_line){
 				curr_l->val[gap_start++] = curr_l->val[gap_end++];
-				if (gap_start - start_long_line == cols -1)
+				if (gap_start - start_long_line == (unsigned int) cols -1)
 					start_long_line += 10;
 			}
 			break;
@@ -337,7 +337,7 @@ int main(int argc, char *argv[])
 				rem_gap(); //this could be useless
 				make_gap();
 			}
-			if (gap_start < cols)
+			if (gap_start < (unsigned int) cols)
 				curr_l->val[gap_start++] = (char) tmp;
 		}	
 		clear_screen();
