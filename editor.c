@@ -251,7 +251,7 @@ void get_file_and_save(struct page pg)
 	/** get char is affected from the timer, so the timer needs to be disabled */
 	disable_timer();
 	do {
-		tmp = getchar();
+		read(STDIN_FILENO,&tmp,1);
 		/* delete or backspace */
 		if (tmp == 127 || tmp == 8)
 			buf2_rm_char();
@@ -317,7 +317,7 @@ int main(int argc, char *argv[])
 	do {
 		enable_timer();
 		char *msg = "";
-		if(read(0,&(tmp),sizeof(char))){
+		if(read(STDIN_FILENO,&(tmp),1)){
 			if (tmp == '\033'){
 				capture_arrow(pg.blk_v[0]->s);
 		/*backspace or delete chars*/
