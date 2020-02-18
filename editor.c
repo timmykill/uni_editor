@@ -12,10 +12,15 @@
 #include "file.h"
 #include "second_buffer.h"
 
+#define PRINT_CURSOR() print_cursor(gap_start - start_long_line, curs_l)
+
+
 /* global vars */
 struct line * curr_l;
-unsigned int gap_start, gap_end, held_gap_start;
+unsigned int gap_start, gap_end, held_gap_start, start_long_line;
 unsigned int curs_l;
+int cols, rows;
+
 
 /**
 	Undoes whatever make_gap does
@@ -72,19 +77,31 @@ void print_page(struct page pg)
 		l = pg.blk_v[i]->first;
 		while(l != NULL){
 			if (l == curr_l){
-				write(STDOUT_FILENO, l->val, gap_start);
-				write(STDOUT_FILENO, l->val + gap_end, l->s - gap_end);
+				if (cols < l->s) {
+					if (gap_start < start_long_line)
+						die("something really wrong");
+					write(STDOUT_FILENO, l->val + start_long_line, gap_start - start_long_line);
+					write(STDOUT_FILENO, l->val + gap_end, cols + start_long_line - gap_start);
+				} else {
+					write(STDOUT_FILENO, l->val, gap_start);
+					write(STDOUT_FILENO, l->val + gap_end, l->s - gap_end);	
+				}
 			} else {
-				write(STDOUT_FILENO, l->val, l->s);
+				if (cols < l->s){
+					write(STDOUT_FILENO, l->val, cols - 1);
+					write(STDOUT_FILENO, "\x1B[7m>\x1b[0m", 10);
+				} else {
+					write(STDOUT_FILENO, l->val, l->s);
+				}
 			}
-				write(STDOUT_FILENO, "\r\n", 3);
+			write(STDOUT_FILENO, "\r\n", 3);
 			l = l->next;
 		}
 	}
 }
 
 /* footer a la nano */
-void print_footer(int rows, int cols, char *msg)
+void print_footer(char *msg)
 {
 	int i;
 	char *c;
@@ -133,6 +150,7 @@ void capture_arrow(unsigned int y_const)
 			curr_l = curr_l->prev;
 			curs_l--;
 			set_new_gap_start();
+			start_long_line = 0;
 			make_gap();
 			break;
 		case 'B':
@@ -144,16 +162,23 @@ void capture_arrow(unsigned int y_const)
 				curs_l++;
 				curr_l = curr_l->next;
 				set_new_gap_start();
+				start_long_line = 0;
 				make_gap();
 			}
 			break;
-		case 'C':
-			if (gap_end < curr_l->s-1)
+		case 'C': /* freccia a destra */
+			if (gap_end < curr_l->s-1 && gap_start < cols + start_long_line){
 				curr_l->val[gap_start++] = curr_l->val[gap_end++];
+				if (gap_start - start_long_line == cols -1)
+					start_long_line += 10;
+			}
 			break;
-		case 'D':
-			if (gap_start != 0)
+		case 'D': /* freccia a sinistra */
+			if (gap_start != 0) {
 				curr_l->val[--gap_end] = curr_l->val[--gap_start];
+				if (start_long_line != 0 && gap_start == start_long_line)
+					start_long_line -= 10;
+			}
 			break;
 	}
 }
@@ -177,7 +202,7 @@ void newline()
 	l->val = malloc(nl_s);
 	memcpy(l->val, curr_l->val + gap_end, nl_s);
 	l->s = nl_s;
-	gap_end = curr_l->s; //i think this is useless
+	gap_end = curr_l->s - 1; 
 	
 	/* sets linked list */
 	l->next = curr_l->next;
@@ -188,6 +213,8 @@ void newline()
 	/* i dont like having rem_gap and make_gap here*/
 	rem_gap();
 	curr_l = l;
+	start_long_line = 0;
+	held_gap_start = 0;
 	gap_start = 0;
 	make_gap();
 }
@@ -216,11 +243,11 @@ void remline()
 	gets file name
 	opens the file and serves it to save_to_file
 */
-void get_file_and_save(int rows, int cols, struct page pg)
+void get_file_and_save(struct page pg)
 {
 	int tmp;
 	FILE* fp;
-	print_footer(rows, cols, buf2_get_content());
+	print_footer(buf2_get_content());
 	do {
 		tmp = getchar();
 		/* delete or backspace */
@@ -228,7 +255,7 @@ void get_file_and_save(int rows, int cols, struct page pg)
 			buf2_rm_char();
 		else if (tmp != '\n')
 			buf2_put_char(tmp);
-		print_footer(rows, cols, buf2_get_content());
+		print_footer(buf2_get_content());
 	} while (tmp != '\n');
 	fp = fopen(buf2_get_content(), "w");
 	save_to_file(fp, pg);
@@ -257,6 +284,8 @@ int main(int argc, char *argv[])
 	/* Clear screen, set it raw, and get terminal size */
 	clear_screen();
 	ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+	cols = w.ws_col;
+	rows = w.ws_row;
 	prep_term();
 	atexit(restore_term);
 
@@ -264,7 +293,8 @@ int main(int argc, char *argv[])
 	pg = load_page(in); 
 	curr_l = pg.blk_v[0]->first;
 	gap_start = 0;
-	held_gap_start=0; //you deserve no scold
+	held_gap_start = 0;
+	start_long_line = 0;
 	curs_l = 0;
 	make_gap();
 
@@ -275,10 +305,10 @@ int main(int argc, char *argv[])
 	/* Print content of page*/
 	clear_screen();
 	print_page(pg);
-	print_footer(w.ws_row, w.ws_col, "");
+	print_footer("");
 
 	/* Initialize text box and cursor*/
-	print_cursor(gap_start, curs_l);
+	PRINT_CURSOR();
 
 	/* 	Get user input	*/
 	do {
@@ -299,19 +329,20 @@ int main(int argc, char *argv[])
 			(pg.blk_v[0]->s)++;
 		} else if (tmp == 's'){
 			rem_gap();
-			get_file_and_save(w.ws_row, w.ws_col, pg);
+			get_file_and_save(pg);
 			make_gap();
 			msg = "Saved file";
 		} else {
-			if( gap_end - gap_start == 1){
+			if(gap_end - gap_start == 1){
 				rem_gap(); //this could be useless
 				make_gap();
 			}
-			curr_l->val[gap_start++] = (char) tmp;
+			if (gap_start < cols)
+				curr_l->val[gap_start++] = (char) tmp;
 		}	
 		clear_screen();
 		print_page(pg);
-		print_footer(w.ws_row, w.ws_col, msg);
-		print_cursor(gap_start, curs_l);
+		print_footer(msg);
+		PRINT_CURSOR();
 	} while (tmp != 'q');
 }

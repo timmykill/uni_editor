@@ -1,12 +1,12 @@
 # Progetto esercitazione in C
 
-Creare un piccolo editor di testo
-
-Lo scopo di questo progetto è totalmente educativo.
+Little text editor,
+this project is only for training, this editor is not intended for actual use
 
 # TODO
 
  * Debugging
+   + Tab and not unicode characters support
  * Manage bigger files than the terminal screen
  * Manage files with long lines (during fetch)
 
