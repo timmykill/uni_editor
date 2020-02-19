@@ -15,6 +15,7 @@ struct page load_page(FILE* fp)
 	size_t tmp_blk_size = 0;
 	struct block *tmp_blk_v[BLK_VEC_SIZE];
 	size_t tmp_blk_v_size = 0;
+/*	struct block * blk_v; */
 	struct line * tmp_l;
 	char tmp_s[STRING_SIZE];
 	size_t tmp_s_size = 0;
