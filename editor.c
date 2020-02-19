@@ -249,8 +249,6 @@ void get_file_and_save(struct page pg)
 	struct winsize w;
 	FILE* fp;
 	print_footer(buf2_get_content());
-	/** get char is affected from the timer, so the timer needs to be disabled */
-	disable_timer();
 	do {
 		if (read(STDIN_FILENO,&tmp,1)){
 			/* delete or backspace */
@@ -266,7 +264,6 @@ void get_file_and_save(struct page pg)
 			rows = w.ws_row;
 		}
 	} while (tmp != '\n');
-	enable_timer();
 	fp = fopen(buf2_get_content(), "w");
 	save_to_file(fp, pg);
 }
@@ -322,7 +319,6 @@ int main(int argc, char *argv[])
 
 	/* 	Get user input	*/
 	do {
-		enable_timer();
 		char *msg = "";
 		if(read(STDIN_FILENO,&(tmp),1)){
 			if (tmp == '\033'){
