@@ -45,21 +45,10 @@ void prep_term()
 	struct termios newt;
 	tcgetattr(STDIN_FILENO, &oldt);
 	newt = oldt;
-	newt.c_lflag &= ~(ICANON | ECHO);         
+	newt.c_lflag &= ~(ICANON | ECHO); 
+	newt.c_cc[VTIME]=TIMERMAX;
+	newt.c_cc[VMIN]=TIMERMIN;        
 	tcsetattr(STDIN_FILENO, TCSANOW, &newt);	
-}
-/** update the current terminal settings to allow timed input */
-void enable_timer(){
-	struct termios temp;
-	tcgetattr(STDIN_FILENO, &temp);
-	temp.c_cc[VTIME]=TIMERMAX;
-	temp.c_cc[VMIN]=TIMERMIN;
-	tcsetattr(STDIN_FILENO,TCSANOW, &temp);
-}
-/** restore the normal raw settings of the terminal */
-void disable_timer(){
-	tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-	prep_term();
 }
 
 void clear_line(unsigned int line)

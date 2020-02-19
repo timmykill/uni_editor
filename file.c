@@ -15,7 +15,6 @@ struct page load_page(FILE* fp)
 	size_t tmp_blk_size = 0;
 	struct block *tmp_blk_v[BLK_VEC_SIZE];
 	size_t tmp_blk_v_size = 0;
-	struct block * blk_v;
 	struct line * tmp_l;
 	char tmp_s[STRING_SIZE];
 	size_t tmp_s_size = 0;
@@ -88,7 +87,7 @@ void save_to_file(FILE * fp, struct page pg)
 	struct line *l;
 	int i;
 	rewind(fp);
-	for (i = 0; i < pg.s; i++) 
+	for (i = 0;(unsigned) i < pg.s; i++) 
 		for(l = pg.blk_v[i]->first; l != NULL; l = l->next)
 			fprintf(fp, "%s\n", l->val);
 }

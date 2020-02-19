@@ -21,6 +21,8 @@ struct line * new_line()
 	l->s = 0;
 	l->next = NULL;
 	l->prev = NULL;
+	//* il compilatore ha fatto notare che mancava il return, aggiungendolo ed eseguendo il programma, se giochi un po con il return il programma si fotte, non so se già accadeva anche prima o è per il return aggiunto *//
+	return l;
 }
 
 

@@ -5,10 +5,6 @@
 void prep_term();
 /** Restore previous terminal settings */
 void restore_term();
-/** enables the timed input */
-void enable_timer();
-/** disables the timed input */
-void disable_timer();
 /** delete a line of text from output */
 void clear_line(unsigned int line);
 /** delete all text from output */
