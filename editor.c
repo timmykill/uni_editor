@@ -243,7 +243,7 @@ void remline()
 	gets file name
 	opens the file and serves it to save_to_file
 */
-void get_file_and_save(struct page pg)
+void get_file_and_save(struct page pg, char* msg)
 {	
 	int tmp;
 	struct winsize w;
@@ -262,6 +262,11 @@ void get_file_and_save(struct page pg)
 			ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
 			cols = w.ws_col;
 			rows = w.ws_row;
+			clear_screen();
+                	print_page(pg);
+         	        print_footer(msg);
+	                PRINT_CURSOR();
+			print_footer(buf2_get_content());
 		}
 	} while (tmp != '\n');
 	fp = fopen(buf2_get_content(), "w");
@@ -336,7 +341,7 @@ int main(int argc, char *argv[])
 				(pg.blk_v[0]->s)++;
 			} else if (tmp == 's'){
 				rem_gap();
-				get_file_and_save(pg);
+				get_file_and_save(pg,msg);
 				make_gap();
 				msg = "Saved file";
 			} else {
