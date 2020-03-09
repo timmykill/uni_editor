@@ -1,8 +1,10 @@
+#include <stdint.h>
+
 #include "utils.h"
 #include "second_buffer.h"
 
 static char buf[BUF_SIZE];
-static int buf_end = 0;
+static uint_fast16_t buf_end = 0;
 
 void buf2_put_char(char c)
 {
