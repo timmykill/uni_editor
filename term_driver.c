@@ -5,6 +5,10 @@
 #include "utils.h"
 #define TIMERMAX 5
 #define TIMERMIN 0
+
+#define TERM_MAX_SIZE 5
+#define MAX_DECIMAL 99999
+
 /** Saves the previous terminal settings */
 static struct termios oldt;
 void itoa_rec(int i, char* c, size_t s)
@@ -24,7 +28,7 @@ void itoa_rec(int i, char* c, size_t s)
 	@param buf space where the string will be placed
 	@param s size of the string
 */
-void itoa(int i, char* buf, size_t s)
+void itoa(unsigned int i, char* buf, size_t s)
 {
 	itoa_rec(i, buf, s-2);
 	buf[s-1] = '\0';
@@ -53,15 +57,14 @@ void prep_term()
 
 void clear_line(unsigned int line)
 {
-	const int max_size = 5;
-	char l_c[max_size];
-	if (line > 9999)
+	char l_c[TERM_MAX_SIZE];
+	if (line > MAX_DECIMAL)
 		die("term too big");
-	itoa(line, l_c, max_size);
+	itoa(line, l_c, TERM_MAX_SIZE);
 	const char *CLEAR_LINE_ANSI0 = "\x1B[";
 	const char *CLEAR_LINE_ANSI1 = ";1H\x1B[K";
 	write(STDOUT_FILENO, CLEAR_LINE_ANSI0, 3);
-	write(STDOUT_FILENO, l_c, max_size);
+	write(STDOUT_FILENO, l_c, TERM_MAX_SIZE);
 	write(STDOUT_FILENO, CLEAR_LINE_ANSI1, 7);
 }
 
@@ -73,16 +76,15 @@ void clear_screen()
 
 void print_cursor(unsigned int x, unsigned int y)
 {
-	const int max_size = 5;
-	char x_c[max_size];
-	char y_c[max_size];
-	if (x > 9999 || y > 9999)
+	char x_c[TERM_MAX_SIZE];
+	char y_c[TERM_MAX_SIZE];
+	if (x > MAX_DECIMAL || y > MAX_DECIMAL)
 		die("term too big");
-	itoa(x+1, x_c, max_size);
-	itoa(y+1, y_c, max_size);
+	itoa(x+1, x_c, TERM_MAX_SIZE);
+	itoa(y+1, y_c, TERM_MAX_SIZE);
 	write(STDOUT_FILENO, "\033[", 3);
-	write(STDOUT_FILENO, y_c, max_size);
+	write(STDOUT_FILENO, y_c, TERM_MAX_SIZE);
 	write(STDOUT_FILENO, ";", 2);
-	write(STDOUT_FILENO, x_c, max_size);
+	write(STDOUT_FILENO, x_c, TERM_MAX_SIZE);
 	write(STDOUT_FILENO, "H", 2);
 }

@@ -1,5 +1,7 @@
-#ifndef _TYPES_H_
-#define _TYPES_H_
+#ifndef _MYTYPES_H_
+#define _MYTYPES_H_
+
+#include <stdint.h>
 
 #define LINE_LENGHT 50
 #define BLOCK_SIZE 10000
@@ -10,8 +12,8 @@
 	using block / line hierarchy
 */
 struct page_coord {
-	int block;
-	int line;
+	uint_fast16_t block;
+	uint_fast16_t line;
 };
 
 /**

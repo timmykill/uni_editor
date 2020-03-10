@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <termios.h>
+#include <stdint.h>
 
 #include "term_driver.h"
 #include "types.h"
@@ -17,9 +18,10 @@
 
 /* global vars */
 struct line * curr_l;
-unsigned int gap_start, gap_end, held_gap_start, start_long_line;
-unsigned int curs_l;
-int cols, rows;
+uint_fast16_t 	gap_start, gap_end, held_gap_start, 
+				start_long_line, 
+				curs_l, 
+				cols, rows;
 
 
 /**
@@ -46,7 +48,7 @@ void rem_gap()
 */
 void make_gap()
 {
-	unsigned int GAP_SIZE = 10; 
+	const uint_fast8_t GAP_SIZE = 10; 
 	size_t n_size, g_size; //these are for convinience
 	char * gapped_val;
 
@@ -58,7 +60,7 @@ void make_gap()
 		copies first part (before the cursor) at the start of the buffer
 		copies last part (after the cursor) at the end of the buffer
 	*/
-	gapped_val = malloc(g_size);
+	gapped_val = (char*) malloc(g_size);
 	memcpy(gapped_val, curr_l->val, gap_start);
 	memcpy(gapped_val + gap_start + GAP_SIZE , curr_l->val + gap_start, n_size - gap_start);
 
@@ -103,7 +105,7 @@ void print_page(struct page pg)
 /* footer a la nano */
 void print_footer(char *msg)
 {
-	int i;
+	uint_fast16_t i;
 	char *c;
 	//delete last 2 lines
 	clear_line(rows-2);
@@ -169,7 +171,7 @@ void capture_arrow(unsigned int y_const)
 		case 'C': /* freccia a destra */
 			if (gap_end < curr_l->s-1 && gap_start < cols + start_long_line){
 				curr_l->val[gap_start++] = curr_l->val[gap_end++];
-				if (gap_start - start_long_line == (unsigned int) cols -1)
+				if (gap_start - start_long_line == cols -1)
 					start_long_line += 10;
 			}
 			break;
@@ -228,7 +230,7 @@ void remline()
 	tmp_l = curr_l;
 	curr_l = curr_l->prev;
 	/* append deleted line to current */
-	new_v = realloc(curr_l->val, tmp_l->s + curr_l->s);
+	new_v = (char*) realloc(curr_l->val, tmp_l->s + curr_l->s);
 	memcpy(new_v + curr_l->s, tmp_l->val, tmp_l->s);
 	curr_l->s += tmp_l->s;
 	curr_l->val = new_v;
@@ -245,7 +247,7 @@ void remline()
 */
 void get_file_and_save(struct page pg, char* msg)
 {	
-	int tmp;
+	char tmp;
 	struct winsize w;
 	FILE* fp;
 	print_footer(buf2_get_content());
@@ -277,7 +279,7 @@ void get_file_and_save(struct page pg, char* msg)
 int main(int argc, char *argv[])
 {
 	struct winsize w;
-	int tmp;
+	uint_fast16_t tmp;
 	struct page pg;
 	FILE *in;
 
@@ -311,7 +313,7 @@ int main(int argc, char *argv[])
 	make_gap();
 
 	/* if file is bigger than screen die, for now */
-	if( pg.s > 1 || (unsigned short) pg.blk_v[0]->s > w.ws_row)
+	if( pg.s > 1 || pg.blk_v[0]->s > (size_t) w.ws_row)
 		die("File is too big, no scrolling for now");
 
 	/* Print content of page*/
@@ -349,7 +351,7 @@ int main(int argc, char *argv[])
 					rem_gap(); //this could be useless
 					make_gap();
 				}
-				if (gap_start < (unsigned int) cols)
+				if (gap_start < cols)
 					curr_l->val[gap_start++] = (char) tmp;
 			}
 		} else {
