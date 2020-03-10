@@ -229,6 +229,7 @@ void remline()
 	curr_l->prev->next = curr_l->next;
 	tmp_l = curr_l;
 	curr_l = curr_l->prev;
+	gap_start = curr_l->s;
 	/* append deleted line to current */
 	new_v = (char*) realloc(curr_l->val, tmp_l->s + curr_l->s);
 	memcpy(new_v + curr_l->s, tmp_l->val, tmp_l->s);
@@ -236,7 +237,6 @@ void remline()
 	curr_l->val = new_v;
 	free(tmp_l->val);
 	free(tmp_l);
-	make_gap();
 	curs_l--;
 }
 
@@ -327,7 +327,7 @@ int main(int argc, char *argv[])
 	/* 	Get user input	*/
 	do {
 		char *msg = "";
-		if(read(STDIN_FILENO,&(tmp),1)){
+		if(read(STDIN_FILENO, &tmp, 1)){
 			if (tmp == '\033'){
 				capture_arrow(pg.blk_v[0]->s);
 		/*backspace or delete chars*/
@@ -335,7 +335,9 @@ int main(int argc, char *argv[])
 				if (gap_start > 0){
 					gap_start--;
 				} else if (curs_l > 0){
+					rem_gap();
 					remline();
+					make_gap();
 					(pg.blk_v[0]->s)--;
 				}
 			} else if (tmp == '\n'){
