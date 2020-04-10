@@ -13,15 +13,17 @@
 #include "file.h"
 #include "second_buffer.h"
 
-#define PRINT_CURSOR() print_cursor(gap_start - start_long_line, curs_l)
+#define PRINT_CURSOR() print_cursor(plus_tab + gap_start - start_long_line, curs_l)
 
+#define TABSIZE 8
 
 /* global vars */
 struct line * curr_l;
 uint_fast16_t 	gap_start, gap_end, held_gap_start, 
 				start_long_line, 
 				curs_l, 
-				cols, rows;
+				cols, rows,
+				plus_tab = 0;
 
 
 /**
@@ -74,11 +76,19 @@ void make_gap()
 void print_page(struct page pg)
 {
 	size_t i;
+	uint_fast8_t j;
 	struct line * l;
 	for(i = 0; i < pg.s; i++){
 		l = pg.blk_v[i]->first;
 		while(l != NULL){
 			if (l == curr_l){
+				/* check for tabs */
+				plus_tab = 0;
+				for (j = 0; j < gap_start; j++){
+					if (l->val[j] == '\t')
+						plus_tab += TABSIZE - ((j + plus_tab) % TABSIZE) - 1;
+				}
+
 				if ((size_t) cols <  l->s) {
 					if (gap_start < start_long_line)
 						die("something really wrong");
@@ -322,7 +332,7 @@ int main(int argc, char *argv[])
 	/* 	Get user input	*/
 	do {
 		char *msg = "";
-		if(read(STDIN_FILENO,&(tmp),1)){
+		if(read(STDIN_FILENO, &tmp, 1)){
 			if (tmp == '\033'){
 				capture_arrow(pg.blk_v[0]->s);
 		/*backspace or delete chars*/
